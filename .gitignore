@@ -1,0 +1,9 @@
+# build outputs
+[Bb]in
+[Oo]bj
+
+# User settings
+*.user
+
+# Mac OSX files
+.DS_Store
