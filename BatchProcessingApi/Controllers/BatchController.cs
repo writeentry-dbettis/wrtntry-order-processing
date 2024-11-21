@@ -1,8 +1,9 @@
 using BatchProcessingApi.Interfaces;
 using BatchProcessingApi.Models;
-using BatchProcessing.Models;
+using BatchProcessing.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using BatchProcessing.Common.Models;
 
 namespace BatchProcessingApi.Controllers
 {

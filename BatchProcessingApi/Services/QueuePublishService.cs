@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using BatchProcessing.Models.Interfaces;
+using BatchProcessing.Common.Interfaces;
 using BatchProcessingApi.Interfaces;
 using BatchProcessingApi.Models;
 using Google.Cloud.PubSub.V1;

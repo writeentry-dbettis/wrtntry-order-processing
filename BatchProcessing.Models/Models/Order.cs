@@ -1,7 +1,7 @@
 using System;
-using BatchProcessing.Models.Interfaces;
+using BatchProcessing.Common.Interfaces;
 
-namespace BatchProcessing.Models;
+namespace BatchProcessing.Common.Models;
 
 public class Order : INameableEntity
 {

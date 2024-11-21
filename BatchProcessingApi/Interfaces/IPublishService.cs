@@ -1,5 +1,5 @@
 using System;
-using BatchProcessing.Models.Interfaces;
+using BatchProcessing.Common.Interfaces;
 using BatchProcessingApi.Models;
 
 namespace BatchProcessingApi.Interfaces;

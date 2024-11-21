@@ -1,6 +1,6 @@
 using System;
 
-namespace BatchProcessing.Models.Interfaces;
+namespace BatchProcessing.Common.Interfaces;
 
 public interface INameableEntity
 {
