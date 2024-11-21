@@ -2,9 +2,12 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
+using BatchProcessing.Models;
+using BatchProcessing.Models.Interfaces;
 using BatchProcessingApi.Interfaces;
 using BatchProcessingApi.Models;
 using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace BatchProcessingApi.Services;
 
@@ -20,7 +23,7 @@ public class CsvBatchProcessor : IBatchProcessor
     }
 
     public async IAsyncEnumerable<QueueResult> ProcessBatchFile<Tout>(Stream batchFile, string topicId, 
-        [EnumeratorCancellation] CancellationToken cancellationToken) where Tout : INameableEntity
+        string batchId, [EnumeratorCancellation] CancellationToken cancellationToken) where Tout : INameableEntity
     {
         var rows = new List<Tout>();
 
@@ -29,35 +32,37 @@ public class CsvBatchProcessor : IBatchProcessor
         {
             using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture)) 
             {
+                if (_mappings.TryGetValue(typeof(Tout), out var csvMap))
+                {
+                    csv.Context.RegisterClassMap(csvMap);
+                }
+
                 rows = csv.GetRecords<Tout>().ToList();
             }
         }
 
         // publish each row as a message to the queue
-        var published = 0;
-        foreach (var row in rows)
+        await foreach (var message in _publishService.PublishMessageToTopic<Tout>(topicId, batchId, cancellationToken, [.. rows]))
         {
-            string? messageId = string.Empty
-                , errorMessage = null;
+            yield return message;
+        }
+    }
 
-            try
-            {
-                messageId = await _publishService.PublishMessageToTopic(row, topicId, cancellationToken);
-                published++;
-            }
-            catch (Exception ex)
-            {
-                errorMessage = ex.Message;
-                _logger.LogError(ex, "Error publishing message");
-            }
+    private static Dictionary<Type, Type> _mappings = 
+        new Dictionary<Type, Type>()
+        {
+            { typeof(Order), typeof(OrderMap)}
+        };
 
-            yield return new QueueResult
-            {
-                MessageId = messageId,
-                Name = row.Name(),
-                QueueDateTime = DateTime.UtcNow,
-                ErrorMessage = errorMessage
-            };
+    class OrderMap : ClassMap<Order>
+    {
+        public OrderMap()
+        {
+            Map(o => o.Id).Name("Id");
+            Map(o => o.PONumber).Name("PO");
+            Map(o => o.TotalAmount).Name("Total");
+            Map(o => o.Tax).Name("Tax");
+            Map(o => o.CreatedDate).Name("Date");
         }
     }
 }

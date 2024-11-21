@@ -1,5 +1,6 @@
 using BatchProcessingApi.Interfaces;
 using BatchProcessingApi.Models;
+using BatchProcessing.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,6 +35,7 @@ namespace BatchProcessingApi.Controllers
                 var fileResults = _batchProcessor.ProcessBatchFile<Order>(
                     file.OpenReadStream(), 
                     QueueTopic.OrderProcessing, 
+                    newBatchId.ToString(),
                     cancellationToken).WithCancellation(cancellationToken);
 
                 await foreach (var result in fileResults)
@@ -42,7 +44,10 @@ namespace BatchProcessingApi.Controllers
                 }
             }
 
-            return Ok(results);
+            return Ok(new {
+                BatchId = newBatchId,
+                Results = results
+            });
         }
     }
 }

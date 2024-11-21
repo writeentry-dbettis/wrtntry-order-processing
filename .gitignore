@@ -1,6 +1,10 @@
 # build outputs
 [Bb]in
 [Oo]bj
+wwwroot
+
+# dependencies
+node_modules
 
 # User settings
 *.user

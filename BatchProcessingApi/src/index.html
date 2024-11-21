@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ASP.NET Core SignalR with TypeScript and Webpack</title>
+  </head>
+  <body>
+    <div class="input-zone">
+      <form id="batchUploadForm" method="POST" action="/api/batch/new" enctype="multipart/form-data">
+        <label id="lblFile" for="uploadFile">Upload File:</label>
+        <input id="uploadFile" type="file" name="batchDocument" accept="text/csv" />
+        <button class="btn" type="submit">Upload</button>
+        <label id="lblBusy" style="visibility: hidden;">Uploading...</label>
+      </form>
+    </div>
+    <div id="divMessages" class="messages"></div>
+  </body>
+</html>

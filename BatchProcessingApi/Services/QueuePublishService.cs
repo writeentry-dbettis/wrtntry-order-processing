@@ -1,6 +1,9 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
+using BatchProcessing.Models.Interfaces;
 using BatchProcessingApi.Interfaces;
+using BatchProcessingApi.Models;
 using Google.Cloud.PubSub.V1;
 using Google.Protobuf.Collections;
 using Microsoft.Extensions.Options;
@@ -23,42 +26,65 @@ public class QueuePublishService : IPublishService
         _logger = logger;
     }
 
-    public async Task<string> PublishMessageToTopic<T>(T obj, string topicId, CancellationToken cancellationToken)
+    public async IAsyncEnumerable<QueueResult> PublishMessageToTopic<T>(string topicId, string batchId, [EnumeratorCancellation] CancellationToken cancellationToken, params T[] objs) where T : INameableEntity
     {
-        var message = new 
-        {
-            Type = typeof(T),
-            Environment = _options.EnvironmentName,
-            Data = obj,
-        };
-
-        var messageJson = JsonSerializer.Serialize(message, _jsonSerializerOptions);
-
         var topicName = new TopicName(_options.ProjectId, topicId);
 
-        string messageId = "---";
+        var retVal = new List<string>();
 
         await using (var publisher = await PublisherClient.CreateAsync(topicName))
         {
-             var pubMessage = new PubsubMessage
+            foreach (var obj in objs)
             {
-                Data = Google.Protobuf.ByteString.CopyFromUtf8(messageJson)
-            };
-            pubMessage.Attributes.Add("environment", _options.EnvironmentName);
+                var messageId = "";
+                string? errorMessage = null;
 
-            messageId = await publisher.PublishAsync(pubMessage);
+                try 
+                {
+                    var message = new 
+                    {
+                        Type = typeof(T).FullName,
+                        Environment = _options.EnvironmentName,
+                        Data = obj,
+                    };
+
+                    var messageJson = JsonSerializer.Serialize(message, _jsonSerializerOptions);
+
+                    var pubMessage = new PubsubMessage
+                    {
+                        Data = Google.Protobuf.ByteString.CopyFromUtf8(messageJson)
+                    };
+
+                    pubMessage.Attributes.Add("environment", _options.EnvironmentName);
+
+                    if (!string.IsNullOrWhiteSpace(batchId))
+                    {
+                        pubMessage.Attributes.Add("batchId", batchId);
+                    }                    
+
+                    messageId = await publisher.PublishAsync(pubMessage);
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = ex.Message;
+                    _logger.LogError(ex, $"An error occurred while queueing item {obj.Name}.");
+                }
+
+                yield return new QueueResult
+                {
+                    MessageId = messageId,
+                    Name = obj.Name(),
+                    QueueDateTime = DateTime.UtcNow,
+                    ErrorMessage = errorMessage
+                };
+            }            
         }       
-
-        _logger.LogInformation($"Published {messageId} to topic {topicName}");
-
-        return messageId;
     }
 }
 
+
 public class QueuePublishServiceConfiguration
 {
-    public string? QueueName { get; set; }
-    public Uri? BaseUrl { get; set; }
     public string? ProjectId { get; set; }
     public string EnvironmentName { get; set; } = "development";
 }
