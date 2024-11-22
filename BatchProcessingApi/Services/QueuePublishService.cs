@@ -2,10 +2,10 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using BatchProcessing.Common.Interfaces;
+using BatchProcessing.Common.Models;
 using BatchProcessingApi.Interfaces;
 using BatchProcessingApi.Models;
 using Google.Cloud.PubSub.V1;
-using Google.Protobuf.Collections;
 using Microsoft.Extensions.Options;
 
 namespace BatchProcessingApi.Services;
@@ -26,7 +26,7 @@ public class QueuePublishService : IPublishService
         _logger = logger;
     }
 
-    public async IAsyncEnumerable<QueueResult> PublishMessageToTopic<T>(string topicId, string batchId, [EnumeratorCancellation] CancellationToken cancellationToken, params T[] objs) where T : INameableEntity
+    public async IAsyncEnumerable<QueueResult> PublishMessageToTopic<T>(string topicId, string batchId, [EnumeratorCancellation] CancellationToken cancellationToken, params T[] objs) where T : class, INameableEntity
     {
         var topicName = new TopicName(_options.ProjectId, topicId);
 
@@ -41,12 +41,7 @@ public class QueuePublishService : IPublishService
 
                 try 
                 {
-                    var message = new 
-                    {
-                        Type = typeof(T).FullName,
-                        Environment = _options.EnvironmentName,
-                        Data = obj,
-                    };
+                    var message = QueueMessage<T>.CreateForEnvironment(obj, _options.EnvironmentName);
 
                     var messageJson = JsonSerializer.Serialize(message, _jsonSerializerOptions);
 

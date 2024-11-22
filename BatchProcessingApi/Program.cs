@@ -17,8 +17,6 @@ public class Program
 
         builder.Services.AddSignalR();
 
-        builder.Services.AddHostedService<PublisherService>();
-
         builder.Services.AddControllers();
 
         // add service dependencies
@@ -45,30 +43,5 @@ public class Program
         app.MapHub<ChatHub>("/hub");
 
         app.Run();
-    }
-}
-
-public class PublisherService : BackgroundService
-{
-    private static string[] _statuses = { "Queued", "Processing", "Completed" };
-    private readonly IHubContext<ChatHub, IChatClient> _hub;
-
-    public PublisherService(IHubContext<ChatHub, IChatClient> hub)
-    {
-        _hub = hub;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while(!stoppingToken.IsCancellationRequested)
-        {
-            var newId = DateTime.Now.Ticks;
-
-            for (int status = 0; status < _statuses.Length; status++)
-            {
-                await _hub.Clients.Groups("11111111-0000-2222-4444-333333333333").StatusChanged(newId.ToString(), _statuses[status]);
-                await Task.Delay(500);
-            }
-        }
     }
 }

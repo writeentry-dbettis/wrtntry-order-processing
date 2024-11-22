@@ -24,7 +24,7 @@ public class CsvBatchProcessor : IBatchProcessor
     }
 
     public async IAsyncEnumerable<QueueResult> ProcessBatchFile<Tout>(Stream batchFile, string topicId, 
-        string batchId, [EnumeratorCancellation] CancellationToken cancellationToken) where Tout : INameableEntity
+        string batchId, [EnumeratorCancellation] CancellationToken cancellationToken) where Tout : class, INameableEntity
     {
         var rows = new List<Tout>();
 
