@@ -17,6 +17,9 @@ WORKDIR /source
 
 # copy all and build project
 COPY . .
+RUN cd BatchProcessingApi \
+    && npm run release \
+    && cd ..
 RUN dotnet publish BatchProcessingApi/BatchProcessingApi.csproj -c Release -o /app
 
 # final stage/image

@@ -35,21 +35,14 @@ async function uploadBatch(target: HTMLFormElement) {
     })
     .then(r => r.json())
     .then(r => {
-        busy.setAttribute("style", "visibility: hidden;");
-        
-        r.results.forEach(m => {
-            const msg = document.createElement("div");
-            msg.attributes["name"] = m.messageId;
-            msg.innerHTML = `<div class="message-author"><span>${m.name}</span><span style="float: right">${m.queueDateTime}</span></div>`;
-
-            divMessages.appendChild(msg);
-            divMessages.scrollTop = divMessages.scrollHeight;
-        });
-
         connection.start()
             .then(v => {
                 connection.send("subscribe", r.batchId);
             });
+        
+        const entryCount = r.results.length;
+
+        busy.innerHTML = `Uploaded ${entryCount} entries.`;
     })
     .catch(err => console.log(err));
 }

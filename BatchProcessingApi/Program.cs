@@ -1,3 +1,4 @@
+using System.Text.Json;
 using BatchProcessingApi.Hubs;
 using BatchProcessingApi.Interfaces;
 using BatchProcessingApi.Services;
@@ -17,7 +18,10 @@ public class Program
 
         builder.Services.AddSignalR();
 
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddJsonOptions(opts => {
+                opts.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            });
 
         // add service dependencies
         builder.Services.AddScoped<IBatchProcessor, CsvBatchProcessor>();
