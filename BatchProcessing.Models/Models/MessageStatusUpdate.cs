@@ -36,7 +36,7 @@ public struct MessageStatus
         Name = name;
     }
 
-    public static MessageStatus Queued = new MessageStatus(0, "QUEUE");
+    public static MessageStatus Queued = new MessageStatus(0, "QUEUED");
 
     public static MessageStatus Processing = new MessageStatus(10, "PROCESSING");
 

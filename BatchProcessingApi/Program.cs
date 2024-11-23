@@ -27,6 +27,8 @@ public class Program
         builder.Services.AddScoped<IBatchProcessor, CsvBatchProcessor>();
         builder.Services.AddScoped<IPublishService, QueuePublishService>();
 
+        builder.Services.AddHostedService<QueuePublishService>();
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.

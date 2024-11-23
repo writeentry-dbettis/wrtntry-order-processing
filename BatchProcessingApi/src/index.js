@@ -56,30 +56,41 @@ connection.on("statusChanged", function (id, status) {
 function uploadBatch(target) {
     return __awaiter(this, void 0, void 0, function () {
         var data, busy;
+        var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     data = new FormData(target);
                     busy = document.querySelector("#lblBusy");
-                    busy.setAttribute("style", "");
+                    busy.innerHTML = "Uploading...";
                     return [4 /*yield*/, fetch(target.action, {
                             method: target.method,
                             body: data,
                         })
                             .then(function (r) { return r.json(); })
-                            .then(function (r) {
-                            busy.setAttribute("style", "visibility: hidden;");
-                            r.results.forEach(function (m) {
-                                var msg = document.createElement("div");
-                                msg.attributes["name"] = m.messageId;
-                                msg.innerHTML = "<div class=\"message-author\"><span>".concat(m.name, "</span><span style=\"float: right\">").concat(m.queueDateTime, "</span></div>");
-                                divMessages.appendChild(msg);
-                                divMessages.scrollTop = divMessages.scrollHeight;
+                            .then(function (r) { return __awaiter(_this, void 0, void 0, function () {
+                            var entryCount, queueUrl;
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        connection.start()
+                                            .then(function (v) {
+                                            connection.send("subscribe", r.batchId);
+                                        });
+                                        entryCount = r.results.length;
+                                        busy.innerHTML = "Uploaded ".concat(entryCount, " entries. Queueing...");
+                                        queueUrl = "/api/batch/".concat(r.batchId, "/queue");
+                                        return [4 /*yield*/, fetch(queueUrl, {
+                                                method: "POST",
+                                                body: JSON.stringify(r.results)
+                                            })];
+                                    case 1: return [2 /*return*/, _a.sent()];
+                                }
                             });
-                            connection.start()
-                                .then(function (v) {
-                                connection.send("subscribe", r.batchId);
-                            });
+                        }); })
+                            .then(function (q) { return q.json(); })
+                            .then(function (q) {
+                            busy.innerHTML = "Queued ".concat(q, " entries.");
                         })
                             .catch(function (err) { return console.log(err); })];
                 case 1: return [2 /*return*/, _a.sent()];

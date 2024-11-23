@@ -6,5 +6,5 @@ namespace BatchProcessingApi.Interfaces;
 
 public interface IPublishService
 {
-    IAsyncEnumerable<QueueResult> PublishMessageToTopic<T>(string topicId, string batchId, CancellationToken cancellationToken, params T[] objs) where T : class, INameableEntity;
+    Task<int> PublishMessageToTopic<T>(string topicId, string batchId, CancellationToken cancellationToken, params T[] objs) where T : class, INameableEntity;
 }

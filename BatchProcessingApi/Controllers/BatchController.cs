@@ -1,9 +1,8 @@
 using BatchProcessingApi.Interfaces;
 using BatchProcessingApi.Models;
-using BatchProcessing.Common;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using BatchProcessing.Common.Models;
+using System.Text.Json;
 
 namespace BatchProcessingApi.Controllers
 {
@@ -12,11 +11,13 @@ namespace BatchProcessingApi.Controllers
     public class BatchController : ControllerBase
     {
         private readonly IBatchProcessor _batchProcessor;
+        private readonly IPublishService _publishService;
         private readonly ILogger<BatchController> _logger;
 
-        public BatchController(IBatchProcessor batchProcessor, ILogger<BatchController> logger)
+        public BatchController(IBatchProcessor batchProcessor, IPublishService publishService, ILogger<BatchController> logger)
         {
             _batchProcessor = batchProcessor;
+            _publishService = publishService;
             _logger = logger;
         }
 
@@ -29,15 +30,13 @@ namespace BatchProcessingApi.Controllers
             }
 
             var newBatchId = Guid.NewGuid();
-            var results = new List<QueueResult>();
+            var results = new List<Order>();
 
             foreach (var file in Request.Form.Files) 
             {
                 var fileResults = _batchProcessor.ProcessBatchFile<Order>(
                     file.OpenReadStream(), 
-                    QueueTopic.OrderProcessing, 
-                    newBatchId.ToString(),
-                    cancellationToken).WithCancellation(cancellationToken);
+                    cancellationToken);
 
                 await foreach (var result in fileResults)
                 {
@@ -49,6 +48,30 @@ namespace BatchProcessingApi.Controllers
                 BatchId = newBatchId,
                 Results = results
             });
+        }
+
+        [HttpPost("{batchId}/queue")]
+        public async Task<IActionResult> QueueOrdersToProcess([FromRoute] string batchId, CancellationToken cancellationToken)
+        {
+            var orders = JsonSerializer.Deserialize<IEnumerable<Order>>(
+                Request.BodyReader.AsStream(),
+                new JsonSerializerOptions() 
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+            if (!(orders?.Any() ?? false))
+            {
+                return NoContent();
+            }
+
+            var count = await _publishService.PublishMessageToTopic(
+                QueueTopic.OrderProcessing.TopicId, 
+                batchId, 
+                cancellationToken, 
+                orders.ToArray());
+
+            return Accepted(count);
         }
     }
 }

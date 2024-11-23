@@ -1,8 +1,6 @@
-using BatchProcessing.Common.Models;
 using BatchProcessing.Common.Models.Requests;
 using BatchProcessingApi.Hubs;
 using BatchProcessingApi.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
@@ -33,7 +31,7 @@ namespace BatchProcessingApi.Controllers
             {
                 await _hubContext.Clients.Groups(batchId).StatusChanged(
                     statusUpdate.ItemId!, 
-                    statusUpdate.Status.Name!);
+                    statusUpdate.Status?.Name ?? "UNKNOWN");
             }
 
             return Accepted();

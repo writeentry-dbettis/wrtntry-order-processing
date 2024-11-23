@@ -65,7 +65,7 @@ public partial class Function : ICloudEventFunction<MessagePublishedData>
                 order = obj.Deserialize<Order>(_jsonOptions);
             }
 
-            itemId = order!.Id.ToString();
+            itemId = order!.Id;
 
             // call API to set PROCESSING status 
             var processingMessage = MessageStatusUpdate.Create(

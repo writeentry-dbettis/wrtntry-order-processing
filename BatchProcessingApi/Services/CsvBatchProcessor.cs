@@ -1,12 +1,9 @@
-using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
-using BatchProcessing.Common;
 using BatchProcessing.Common.Interfaces;
 using BatchProcessing.Common.Models;
 using BatchProcessingApi.Interfaces;
-using BatchProcessingApi.Models;
 using CsvHelper;
 using CsvHelper.Configuration;
 
@@ -14,20 +11,15 @@ namespace BatchProcessingApi.Services;
 
 public class CsvBatchProcessor : IBatchProcessor
 {
-    private readonly IPublishService _publishService;
     private readonly ILogger<CsvBatchProcessor> _logger;
 
-    public CsvBatchProcessor(IPublishService publishService, ILogger<CsvBatchProcessor> logger)
+    public CsvBatchProcessor(ILogger<CsvBatchProcessor> logger)
     {
-        _publishService = publishService;
         _logger = logger;
     }
 
-    public async IAsyncEnumerable<QueueResult> ProcessBatchFile<Tout>(Stream batchFile, string topicId, 
-        string batchId, [EnumeratorCancellation] CancellationToken cancellationToken) where Tout : class, INameableEntity
+    public async IAsyncEnumerable<Tout> ProcessBatchFile<Tout>(Stream batchFile, [EnumeratorCancellation] CancellationToken cancellationToken) where Tout : class, INameableEntity
     {
-        var rows = new List<Tout>();
-
         // read a list of rows from CSV into an enumerable of models
         using (var reader = new StreamReader(batchFile, Encoding.UTF8)) 
         {
@@ -38,14 +30,11 @@ public class CsvBatchProcessor : IBatchProcessor
                     csv.Context.RegisterClassMap(csvMap);
                 }
 
-                rows = csv.GetRecords<Tout>().ToList();
+                await foreach (var row in csv.GetRecordsAsync<Tout>(cancellationToken))
+                {
+                    yield return row;
+                }
             }
-        }
-
-        // publish each row as a message to the queue
-        await foreach (var message in _publishService.PublishMessageToTopic<Tout>(topicId, batchId, cancellationToken, [.. rows]))
-        {
-            yield return message;
         }
     }
 

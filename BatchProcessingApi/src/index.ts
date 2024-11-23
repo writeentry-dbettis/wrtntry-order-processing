@@ -27,14 +27,14 @@ async function uploadBatch(target: HTMLFormElement) {
 
     const busy = document.querySelector("#lblBusy")!;
 
-    busy.setAttribute("style", "");
+    busy.innerHTML = "Uploading...";
 
     return await fetch(target.action, {
         method: target.method,
         body: data,
     })
     .then(r => r.json())
-    .then(r => {
+    .then(async r => {
         connection.start()
             .then(v => {
                 connection.send("subscribe", r.batchId);
@@ -42,7 +42,18 @@ async function uploadBatch(target: HTMLFormElement) {
         
         const entryCount = r.results.length;
 
-        busy.innerHTML = `Uploaded ${entryCount} entries.`;
+        busy.innerHTML = `Uploaded ${entryCount} entries. Queueing...`;
+
+        var queueUrl = `/api/batch/${r.batchId}/queue`;
+
+        return await fetch(queueUrl, {
+            method: "POST",
+            body: JSON.stringify(r.results)
+        });
+    })
+    .then(q => q.json())
+    .then(q => {
+        busy.innerHTML = `Queued ${q} entries.`;
     })
     .catch(err => console.log(err));
 }
