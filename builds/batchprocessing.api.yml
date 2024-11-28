@@ -91,7 +91,7 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: true
-        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+        arguments: '--configuration $(buildConfig) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
         zipAfterPublish: false
         workingDirectory: '$(Build.SourcesDirectory)/src/$(projectFolder)'
 
@@ -108,7 +108,6 @@ stages:
       displayName: 'Save Package Artifact'
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)' 
         artifactName: 'drop'
 
 - stage: test
@@ -162,7 +161,7 @@ stages:
   displayName: 'Deploy Build Artifacts with Approval'
   trigger: manual
   pool:
-    vmImage: unbuntu-latest
+    vmImage: ubuntu-latest
   condition: variables['requiresReleaseApproval']
   jobs:
   - job: buildAndPush
@@ -186,8 +185,8 @@ stages:
         containerRegistry: '$(containerRegistry)'
         repository: '$(registryName)'
         command: 'buildAndPush'
-        Dockerfile: '$(System.ArtifactsDirectory)/Dockerfile.deploy'
-        buildContext: '$(System.ArtifactsDirectory)'
+        Dockerfile: '$(System.ArtifactsDirectory)/dist/$(imageTag)/Dockerfile.deploy'
+        buildContext: '$(System.ArtifactsDirectory)/dist/$(imageTag)/$(projectFolder)'
         tags: |
           $(imageTag)
           $(Build.SourceVersion)
