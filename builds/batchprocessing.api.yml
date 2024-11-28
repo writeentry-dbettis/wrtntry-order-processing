@@ -170,10 +170,10 @@ stages:
     steps:
     - task: ManualValidation@1
       displayName: 'Wait for Approval'
-      notifyUsers: 'david.bettis@writeentry.net'
-      allowApproversToApproveTheirOwnRuns: true
-      instructions: 'Deploy $(projectFolder) to $(imageTag) image'
-      onTimeout: reject
+      inputs:
+        notifyUsers: '$(notifyUsers)'
+        allowApproversToApproveTheirOwnRuns: true
+        instructions: 'Deploy $(projectFolder) to $(imageTag) image'
 
   - job: buildAndPush
     pool:
