@@ -26,19 +26,19 @@ variables:
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
     buildConfig: Release
     imageTag: latest
-    requiresReleaseApproval: true
+    requiresRevisionApproval: true
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/release') }}:
     buildConfig: Release
     imageTag: demo
-    requiresReleaseApproval: true
+    requiresRevisionApproval: true
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix') }}:
     buildConfig: Release
     imageTag: test
-    requiresReleaseApproval: true
+    requiresRevisionApproval: true
   ${{ else }}:
     buildConfig: Debug
     imageTag: dev
-    requiresReleaseApproval: false
+    requiresRevisionApproval: false
 
 stages:
 - stage: build
@@ -125,58 +125,10 @@ stages:
         echo "Testing stage placeholder"
       displayName: 'Run Unit/Integration Tests'
 
-- stage: autoDeploy
-  displayName: 'Automatically Deploy Build Artifacts'
-  pool:
-    vmImage: unbuntu-latest
-  dependsOn: test
-  condition: and(succeeded('test'), ne(variables['Build.Reason'], 'PullRequest'), not(variables['requiresReleaseApproval']))
-  jobs:
-  - job: buildAndPush
-    steps:
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts'
-      inputs:
-        downloadType: 'single'
-        artifactName: 'drop'
-        downloadPath: '$(System.ArtifactsDirectory)'
-
-    - task: Docker@2
-      displayName: 'Login to Container Registry'
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-      inputs:
-        containerRegistry: $(containerRegistry)
-        command: login
-      
-    - task: Docker@2
-      displayName: 'Build & Push Docker Image for API'
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-      inputs:
-        dockerfile: '$(System.ArtifactsDirectory)/Dockerfile.deploy'
-        buildContext: '$(System.ArtifactsDirectory)'
-        command: buildAndPush
-        repository: '$(registryName)'
-        tags: |
-          $(imageTag)
-          $(Build.SourceVersion)
-
 - stage: approvedDeploy
-  displayName: 'Deploy Build Artifacts with Approval'
-  condition: variables['requiresReleaseApproval']
+  displayName: 'Deploy Build Artifacts to Image Registry'
   jobs:
-  - job: notifyApprovers
-    timeoutInMinutes: 1440
-    pool: server
-    steps:
-    - task: ManualValidation@1
-      displayName: 'Wait for Approval'
-      inputs:
-        notifyUsers: '$(notifyUsers)'
-        allowApproversToApproveTheirOwnRuns: true
-        instructions: 'Deploy $(projectFolder) to $(imageTag) image'
-
   - job: buildAndPush
-    dependsOn: notifyApprovers
     pool:
       vmImage: ubuntu-latest
     steps:
@@ -188,10 +140,6 @@ stages:
         artifactName: 'drop'
         targetPath: '$(System.ArtifactsDirectory)'
       displayName: 'Download Pipeline Artifacts'
-        
-    - script: |
-        ls -alR $(System.ArtifactsDirectory)
-      displayName: 'List artifact contents'
 
     - task: Docker@2
       displayName: 'Login to Container Registry'
@@ -208,5 +156,22 @@ stages:
         Dockerfile: '$(System.ArtifactsDirectory)/dist/$(imageTag)/Dockerfile.deploy'
         buildContext: '$(System.ArtifactsDirectory)/dist/$(imageTag)/$(projectFolder)'
         tags: |
-          $(imageTag)
           $(Build.SourceVersion)
+
+  - job: notifyApprovers
+    timeoutInMinutes: 1440
+    pool: server
+    steps:
+    - task: ManualValidation@1
+      displayName: 'Wait for Approval'
+      inputs:
+        notifyUsers: '$(notifyUsers)'
+        allowApproversToApproveTheirOwnRuns: true
+        instructions: 'Deploy $(projectFolder) to $(imageTag) image'
+
+  - job: deployContainerRevision
+    dependsOn: notifyApprovers
+    condition: or(succeeded('notifyApprovers'), not(variables['requiresRevisionApproval']))
+    steps:
+    - script: |
+        echo "Deploy container revision"
