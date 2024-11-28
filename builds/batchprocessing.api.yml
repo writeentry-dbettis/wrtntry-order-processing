@@ -158,8 +158,7 @@ stages:
   trigger: manual
   pool:
     vmImage: unbuntu-latest
-  dependsOn: test
-  condition: and(succeeded('test'), ne(variables['Build.Reason'], 'PullRequest'), variables['requiresReleaseApproval'])
+  condition: variables['requiresReleaseApproval']
   jobs:
   - job: buildAndPush
     steps:
