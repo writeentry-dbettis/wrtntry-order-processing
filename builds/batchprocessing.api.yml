@@ -182,10 +182,11 @@ stages:
     - task: Docker@2
       displayName: 'Build & Push Docker Image for API'
       inputs:
-        dockerfile: '$(System.ArtifactsDirectory)/Dockerfile.deploy'
-        buildContext: '$(System.ArtifactsDirectory)'
-        command: buildAndPush
+        containerRegistry: '$(containerRegistry)'
         repository: '$(registryName)'
+        command: 'buildAndPush'
+        Dockerfile: '$(System.ArtifactsDirectory)/Dockerfile.deploy'
+        buildContext: '$(System.ArtifactsDirectory)'
         tags: |
           $(imageTag)
           $(Build.SourceVersion)
