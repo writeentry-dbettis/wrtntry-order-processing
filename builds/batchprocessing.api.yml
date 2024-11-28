@@ -91,7 +91,7 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: true
-        arguments: '--configuration $(buildConfig) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+        arguments: '--configuration $(buildConfig) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag) --runtime linux-x64 --no-self-contained'
         zipAfterPublish: false
         workingDirectory: '$(Build.SourcesDirectory)/src/$(projectFolder)'
 
@@ -162,12 +162,22 @@ stages:
 
 - stage: approvedDeploy
   displayName: 'Deploy Build Artifacts with Approval'
-  trigger: manual
-  pool:
-    vmImage: ubuntu-latest
   condition: variables['requiresReleaseApproval']
   jobs:
+  - job: notifyApprovers
+    timeoutInMinutes: 1440
+    pool: server
+    steps:
+    - task: ManualValidation@1
+      displayName: 'Wait for Approval'
+      notifyUsers: 'david.bettis@writeentry.net'
+      allowApproversToApproveTheirOwnRuns: true
+      instructions: 'Deploy $(projectFolder) to $(imageTag) image'
+      onTimeout: reject
+
   - job: buildAndPush
+    pool:
+      vmImage: ubuntu-latest
     steps:
     - checkout: none
 
