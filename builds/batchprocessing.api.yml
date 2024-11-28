@@ -23,22 +23,28 @@ pr:
 variables:
   currentDate: $[ format('{0:yyyyMMdd}', Pipeline.StartTime) ]
   buildPlatform: 'AnyCPU'
+  cloudRunRegion: 'us-east1'
+  cloudRunProjectId: 'whim-1690509463628'
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
     buildConfig: Release
     imageTag: latest
     requiresRevisionApproval: true
+    environmentSuffix: 'prod'
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/release') }}:
     buildConfig: Release
     imageTag: demo
     requiresRevisionApproval: true
+    environmentSuffix: 'test'
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix') }}:
     buildConfig: Release
     imageTag: test
     requiresRevisionApproval: true
+    environmentSuffix: 'test'
   ${{ else }}:
     buildConfig: Debug
     imageTag: dev
     requiresRevisionApproval: false
+    environmentSuffix: 'dev'
 
 stages:
 - stage: build
@@ -180,6 +186,17 @@ stages:
   - job: deployContainerRevision
     dependsOn: notifyApprovers
     condition: or(succeeded('notifyApprovers'), not(variables['requiresRevisionApproval']))
+    pool:
+      vmImage: ubuntu-latest
     steps:
+    - checkout: none
     - script: |
-        echo "Deploy container revision"
+        gcloud auth activate-service-account --quiet --key-file <(echo $(serviceAccountKey) | base64 -d)
+        gcloud run deploy batch-processing-api-$(environmentSuffix) \
+          --quiet \
+          --service-account=$(serviceAccountName) \
+          --allow-unauthenticated \
+          --image=$(cloudRunRegion)-docker.pkg.dev/$(registryName):$(Build.SourceVersion) \
+          --platform=managed \
+          --region=$(cloudRunRegion) \
+          --project=$(cloudRunProjectId)
