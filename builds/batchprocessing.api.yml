@@ -23,7 +23,7 @@ pr:
 variables:
   currentDate: $[ format('{0:yyyyMMdd}', Pipeline.StartTime) ]
   buildPlatform: 'AnyCPU'
-  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
     buildConfig: Release
     imageTag: latest
     requiresReleaseApproval: true
@@ -33,11 +33,11 @@ variables:
     requiresReleaseApproval: true
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix') }}:
     buildConfig: Release
-    outputEnvironment: test
+    imageTag: test
     requiresReleaseApproval: true
   ${{ else }}:
     buildConfig: Debug
-    outputEnvironment: dev
+    imageTag: dev
     requiresReleaseApproval: false
 
 stages:
