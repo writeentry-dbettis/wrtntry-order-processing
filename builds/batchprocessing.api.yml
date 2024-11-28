@@ -108,7 +108,9 @@ stages:
       displayName: 'Save Package Artifact'
       condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
-        artifactName: 'drop'
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: 'drop'
+        publishLocation: 'pipeline'
 
 - stage: test
   displayName: 'Automated Tests'
