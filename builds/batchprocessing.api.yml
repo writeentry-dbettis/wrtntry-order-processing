@@ -75,14 +75,14 @@ stages:
         npm ci
         npm run release
       displayName: 'Build Static Websites'
-      workingDirectory: '$(Build.SourcesDirectory)/src/$(projectFolder)'
+      workingDirectory: '$(Build.SourcesDirectory)/src/BatchProcessingApi'
 
     ## Restore packages
     - task: DotNetCoreCLI@2
       displayName: 'Restore Packages'
       inputs:
         command: 'restore'
-        projects: '$(Build.SourcesDirectory)/src/$(solution)'
+        projects: '$(Build.SourcesDirectory)/src/signalr.sln'
         feedsToUse: 'select'
 
     ## Publish API project
@@ -91,17 +91,25 @@ stages:
       inputs:
         command: 'publish'
         publishWebProjects: true
-        arguments: '--configuration $(buildConfig) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag) --runtime linux-x64 --no-self-contained'
+        arguments: '--configuration $(buildConfig) --output $(Build.SourcesDirectory)/dist/$(imageTag) --runtime linux-x64 --no-self-contained'
         zipAfterPublish: false
-        workingDirectory: '$(Build.SourcesDirectory)/src/$(projectFolder)'
+        workingDirectory: '$(Build.SourcesDirectory)/src/BatchProcessingApi'
 
-    ## Copy Dockerfile to artifact output
+    ## Copy Dockerfile to Pipeline Artifact
     - task: CopyFiles@2
       displayName: 'Copy Dockerfile to Artifacts'
       inputs:
-        sourceFolder: '$(Build.SourcesDirectory)/src/$(projectFolder)'
+        sourceFolder: '$(Build.SourcesDirectory)/src/BatchProcessingApi'
         contents: Dockerfile.deploy
         targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+    
+    ## Copy Build Output to Pipeline Artifact
+    - task: CopyFiles@2
+      displayName: 'Copy Build Output to Artifacts'
+      inputs:
+        sourceFolder: '$(Build.SourcesDirectory)/dist/$(imageTag)/BatchProcessingApi'
+        contents: '**'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)/app'
 
     ## Publish build artifacts to Azure DevOps
     - task: PublishPipelineArtifact@1
@@ -154,7 +162,7 @@ stages:
         repository: '$(registryName)'
         command: 'buildAndPush'
         Dockerfile: '$(System.ArtifactsDirectory)/dist/$(imageTag)/Dockerfile.deploy'
-        buildContext: '$(System.ArtifactsDirectory)/dist/$(imageTag)/$(projectFolder)'
+        buildContext: '$(System.ArtifactsDirectory)/dist/$(imageTag)/app'
         tags: |
           $(Build.SourceVersion)
 
@@ -167,7 +175,7 @@ stages:
       inputs:
         notifyUsers: '$(notifyUsers)'
         allowApproversToApproveTheirOwnRuns: true
-        instructions: 'Deploy $(projectFolder) to $(imageTag) image'
+        instructions: 'Deploy Batch Processing API Revision to $(imageTag) Environment'
 
   - job: deployContainerRevision
     dependsOn: notifyApprovers
