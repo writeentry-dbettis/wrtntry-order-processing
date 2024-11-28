@@ -79,6 +79,7 @@ stages:
 
     ## Restore packages
     - task: DotNetCoreCLI@2
+      displayName: 'Restore Packages'
       inputs:
         command: 'restore'
         projects: '$(Build.SourcesDirectory)/src/$(solution)'
@@ -116,7 +117,7 @@ stages:
     vmImage: ubuntu-latest
   dependsOn: build
   jobs:
-  - job:
+  - job: automatedTests
     steps:
     - script: |
         echo "Testing stage placeholder"
