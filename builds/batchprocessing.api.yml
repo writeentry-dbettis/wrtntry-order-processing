@@ -53,6 +53,7 @@ stages:
 
     - script: |
         echo $(Build.SourceBranch) :: $(buildConfig)/$(imageTag)
+        mkdir -p $(Build.ArtifactStagingDirectory)/dist/$(imageTag)
         echo $(Build.SourceVersion) > $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
         cat $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
       displayName: 'Create Source Version File'
