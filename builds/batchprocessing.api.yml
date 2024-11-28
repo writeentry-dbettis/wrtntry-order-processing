@@ -171,13 +171,12 @@ stages:
     steps:
     - checkout: none
 
-    - task: DownloadBuildArtifacts@0
-      displayName: 'Download Build Artifacts'
+    - task: DownloadPipelineArtifact@2
       inputs:
         buildType: 'current'
-        downloadType: 'single'
         artifactName: 'drop'
-        downloadPath: '$(System.ArtifactsDirectory)'
+        targetPath: '$(System.ArtifactsDirectory)'
+      displayName: 'Download Pipeline Artifacts'
         
     - script: |
         ls -alR $(System.ArtifactsDirectory)
