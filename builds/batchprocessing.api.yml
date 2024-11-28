@@ -52,7 +52,7 @@ stages:
       displayName: 'Install NuGet Installer'
 
     - script: |
-        echo $(Build.SourceBranch) :: $(buildConfig)/$(outputEnvironment)
+        echo $(Build.SourceBranch) :: $(buildConfig)/$(imageTag)
         echo $(Build.SourceVersion) > $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
         cat $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
       displayName: 'Create Source Version File'
