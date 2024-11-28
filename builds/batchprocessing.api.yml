@@ -118,6 +118,7 @@ stages:
   jobs:
   - job: automatedTests
     steps:
+    - checkout: none
     - script: |
         echo "Testing stage placeholder"
       displayName: 'Run Unit/Integration Tests'
@@ -166,12 +167,18 @@ stages:
   jobs:
   - job: buildAndPush
     steps:
+    - checkout: none
+
     - task: DownloadBuildArtifacts@0
       displayName: 'Download Build Artifacts'
       inputs:
         downloadType: 'single'
         artifactName: 'drop'
         downloadPath: '$(System.ArtifactsDirectory)'
+        
+    - script: |
+        ls -alR $(System.ArtifactsDirectory)
+      displayName: 'List artifact contents'
 
     - task: Docker@2
       displayName: 'Login to Container Registry'
