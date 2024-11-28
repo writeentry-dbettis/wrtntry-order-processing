@@ -1,0 +1,188 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - release/*
+    - development
+  paths:
+    include:
+    - src/BatchProcessing.Common
+
+pr:
+  branches:
+    include:
+    - '*'
+    exclude:
+    - master
+    - release/*
+  paths:
+    include:
+    - src/BatchProcessing.Common
+  
+variables:
+  currentDate: $[ format('{0:yyyyMMdd}', Pipeline.StartTime) ]
+  buildPlatform: 'AnyCPU'
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+    buildConfig: Release
+    imageTag: latest
+    requiresReleaseApproval: true
+  ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/release') }}:
+    buildConfig: Release
+    imageTag: demo
+    requiresReleaseApproval: true
+  ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix') }}:
+    buildConfig: Release
+    outputEnvironment: test
+    requiresReleaseApproval: true
+  ${{ else }}:
+    buildConfig: Debug
+    outputEnvironment: dev
+    requiresReleaseApproval: false
+
+stages:
+- stage: build
+  displayName: 'Build Source'
+  pool:
+    vmImage: ubuntu-latest
+  jobs:
+  - job: buildApi
+    steps:
+    - task: NuGetToolInstaller@1
+      displayName: 'Install NuGet Installer'
+
+    - script: |
+        echo $(Build.SourceBranch) :: $(buildConfig)/$(outputEnvironment)
+        echo $(Build.SourceVersion) > $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
+        cat $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
+      displayName: 'Create Source Version File'
+
+    ## Install .NET 8.x
+    - task: UseDotNet@2
+      displayName: 'Install .NET Core SDK'
+      inputs:
+        version: 8.x
+
+    ## Setup NodeJS
+    - task: UseNode@1
+      displayName: 'Set NodeJS to version 20'
+      inputs:
+        version: '20.x'
+
+    ## Build wwwroot 
+    - script: |
+        npm ci
+        npm run release
+      displayName: 'Build Static Websites'
+      workingDirectory: '$(Build.SourcesDirectory)/src/$(projectFolder)'
+
+    ## Restore packages
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'restore'
+        arguments: '$(Build.SourcesDirectory)/src/$(solution)'
+
+    ## Publish API project
+    - task: DotNetCoreCLI@2
+      displayName: 'Build & Publish Project'
+      inputs:
+        command: publish
+        publishWebProjects: True
+        arguments: '$(Build.SourcesDirectory)/src/$(projectFolder) --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+
+    ## Copy Dockerfile to artifact output
+    - task: CopyFiles@2
+      displayName: 'Copy Dockerfile to Artifacts'
+      inputs:
+        sourceFolder: '$(Build.SourcesDirectory)/src/$(projectFolder)'
+        contents: Dockerfile.deploy
+        targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+
+    ## Publish build artifacts to Azure DevOps
+    - task: PublishPipelineArtifact@1
+      displayName: 'Save Package Artifact'
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)' 
+        artifactName: 'drop'
+
+- stage: test
+  displayName: 'Automated Tests'
+  pool:
+    vmImage: ubuntu-latest
+  dependsOn: build
+  jobs:
+  - job:
+    steps:
+    - script: |
+        echo "Testing stage placeholder"
+      displayName: 'Run Unit/Integration Tests'
+
+- stage: autoDeploy
+  displayName: 'Automatically Deploy Build Artifacts'
+  pool:
+    vmImage: unbuntu-latest
+  dependsOn: test
+  condition: and(succeeded('test'), ne(variables['Build.Reason'], 'PullRequest'), not(variables['requiresReleaseApproval']))
+  jobs:
+  - job: buildAndPush
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Build Artifacts'
+      inputs:
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+    - task: Docker@2
+      displayName: 'Login to Container Registry'
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        containerRegistry: $(containerRegistry)
+        command: login
+      
+    - task: Docker@2
+      displayName: 'Build & Push Docker Image for API'
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        dockerfile: '$(System.ArtifactsDirectory)/Dockerfile.deploy'
+        buildContext: '$(System.ArtifactsDirectory)'
+        command: buildAndPush
+        repository: '$(registryName)'
+        tags: |
+          $(imageTag)
+          $(Build.SourceVersion)
+
+- stage: approvedDeploy
+  displayName: 'Deploy Build Artifacts with Approval'
+  trigger: manual
+  pool:
+    vmImage: unbuntu-latest
+  dependsOn: test
+  condition: and(succeeded('test'), ne(variables['Build.Reason'], 'PullRequest'), variables['requiresReleaseApproval'])
+  jobs:
+  - job: buildAndPush
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Build Artifacts'
+      inputs:
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+    - task: Docker@2
+      displayName: 'Login to Container Registry'
+      inputs:
+        containerRegistry: $(containerRegistry)
+        command: login
+      
+    - task: Docker@2
+      displayName: 'Build & Push Docker Image for API'
+      inputs:
+        dockerfile: '$(System.ArtifactsDirectory)/Dockerfile.deploy'
+        buildContext: '$(System.ArtifactsDirectory)'
+        command: buildAndPush
+        repository: '$(registryName)'
+        tags: |
+          $(imageTag)
+          $(Build.SourceVersion)
