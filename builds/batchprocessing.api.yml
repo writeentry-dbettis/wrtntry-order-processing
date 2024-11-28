@@ -87,9 +87,11 @@ stages:
     - task: DotNetCoreCLI@2
       displayName: 'Build & Publish Project'
       inputs:
-        command: publish
-        publishWebProjects: True
-        arguments: '$(Build.SourcesDirectory)/src/$(projectFolder) --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+        command: 'publish'
+        publishWebProjects: true
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+        zipAfterPublish: false
+        workingDirectory: '$(Build.SourcesDirectory)/src/$(projectFolder)'
 
     ## Copy Dockerfile to artifact output
     - task: CopyFiles@2
