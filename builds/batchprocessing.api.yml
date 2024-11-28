@@ -176,6 +176,7 @@ stages:
         instructions: 'Deploy $(projectFolder) to $(imageTag) image'
 
   - job: buildAndPush
+    dependsOn: notifyApprovers
     pool:
       vmImage: ubuntu-latest
     steps:
