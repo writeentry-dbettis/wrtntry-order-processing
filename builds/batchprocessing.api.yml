@@ -23,28 +23,26 @@ pr:
 variables:
   currentDate: $[ format('{0:yyyyMMdd}', Pipeline.StartTime) ]
   buildPlatform: 'AnyCPU'
-  cloudRunRegion: 'us-east1'
-  cloudRunProjectId: 'whim-1690509463628'
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
     buildConfig: Release
     imageTag: latest
     requiresRevisionApproval: true
-    environmentSuffix: 'prod'
+    environmentSuffix: ''
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/release') }}:
     buildConfig: Release
     imageTag: demo
     requiresRevisionApproval: true
-    environmentSuffix: 'test'
+    environmentSuffix: '-test'
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix') }}:
     buildConfig: Release
     imageTag: test
     requiresRevisionApproval: true
-    environmentSuffix: 'test'
+    environmentSuffix: '-test'
   ${{ else }}:
     buildConfig: Debug
     imageTag: dev
     requiresRevisionApproval: false
-    environmentSuffix: 'dev'
+    environmentSuffix: '-dev'
 
 stages:
 - stage: build
@@ -53,6 +51,7 @@ stages:
     vmImage: ubuntu-latest
   jobs:
   - job: buildApi
+    displayName: 'Build Batch Processing API & Dependencies'
     steps:
     - task: NuGetToolInstaller@1
       displayName: 'Install NuGet Installer'
@@ -175,6 +174,7 @@ stages:
   - job: notifyApprovers
     timeoutInMinutes: 1440
     pool: server
+    dependsOn: buildAndPush
     steps:
     - task: ManualValidation@1
       displayName: 'Wait for Approval'
@@ -188,15 +188,19 @@ stages:
     condition: or(succeeded('notifyApprovers'), not(variables['requiresRevisionApproval']))
     pool:
       vmImage: ubuntu-latest
+    variables:
+    - group: 'GCP Deployments'
     steps:
     - checkout: none
     - script: |
-        gcloud auth activate-service-account --quiet --key-file <(echo $(serviceAccountKey) | base64 -d)
-        gcloud run deploy batch-processing-api-$(environmentSuffix) \
+        gcloud auth activate-service-account --quiet --key-file <(echo $DEPLOY_ACCOUNT_KEY | base64 -d)
+        gcloud run deploy batch-processing-api$ENVIRONMENTSUFFIX \
           --quiet \
-          --service-account=$(serviceAccountName) \
+          --service-account=$SERVICEACCOUNTNAME \
           --allow-unauthenticated \
-          --image=$(cloudRunRegion)-docker.pkg.dev/$(registryName):$(Build.SourceVersion) \
+          --image=$REGIONNAME-docker.pkg.dev/$REGISTRYNAME:$BUILD_SOURCEVERSION \
           --platform=managed \
-          --region=$(cloudRunRegion) \
-          --project=$(cloudRunProjectId)
+          --region=$REGIONNAME \
+          --project=$PROJECTID
+      env: 
+        DEPLOY_ACCOUNT_KEY: $(deployAccountKey)
