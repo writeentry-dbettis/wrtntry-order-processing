@@ -27,22 +27,22 @@ variables:
     buildConfig: Release
     imageTag: latest
     requiresRevisionApproval: true
-    environmentSuffix: 'prod'
+    environmentSuffix: ''
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/release') }}:
     buildConfig: Release
     imageTag: demo
     requiresRevisionApproval: true
-    environmentSuffix: 'test'
+    environmentSuffix: '-test'
   ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix') }}:
     buildConfig: Release
     imageTag: test
     requiresRevisionApproval: true
-    environmentSuffix: 'test'
+    environmentSuffix: '-test'
   ${{ else }}:
     buildConfig: Debug
     imageTag: dev
     requiresRevisionApproval: false
-    environmentSuffix: 'dev'
+    environmentSuffix: '-dev'
 
 stages:
 - stage: build
@@ -180,7 +180,7 @@ stages:
     - script: |
         set
         gcloud auth activate-service-account --quiet --key-file <(echo $DEPLOY_ACCOUNT_KEY | base64 -d)
-        gcloud run deploy batch-processing-api-$ENVIRONMENTSUFFIX \
+        gcloud run deploy order-processor$ENVIRONMENTSUFFIX \
           --quiet \
           --service-account=$SERVICEACCOUNTNAME \
           --allow-unauthenticated \
