@@ -173,24 +173,18 @@ stages:
     condition: or(succeeded('notifyApprovers'), not(variables['requiresRevisionApproval']))
     pool:
       vmImage: ubuntu-latest
+    variables:
+    - group: 'GCP Deployments'
     steps:
     - checkout: none
     - script: |
         set
-        gcloud auth activate-service-account --quiet --key-file <(echo $DEPLOY_ACCOUNT_KEY | base64 -d)
-        gcloud run deploy batch-processing-api-$ENVIRONMENT_SUFFIX \
+        gcloud auth activate-service-account --quiet --key-file <(echo $DEPLOYACCOUNTKEY | base64 -d)
+        gcloud run deploy batch-processing-api-$ENVIRONMENTSUFFIX \
           --quiet \
-          --service-account=$SERVICE_ACCOUNT_NAME \
+          --service-account=$SERVICEACCOUNTNAME \
           --allow-unauthenticated \
-          --image=$REGION_NAME-docker.pkg.dev/$REGISTRY_NAME:$SOURCE_VERSION \
+          --image=$REGIONNAME-docker.pkg.dev/$REGISTRYNAME:$BUILD_SOURCEVERSION \
           --platform=managed \
-          --region=$REGION_NAME \
-          --project=$PROJECT_ID
-      env: 
-        ENVIRONMENT_SUFFIX: $(environmentSuffix)
-        DEPLOY_ACCOUNT_KEY: $(deployAccountKey)
-        SERVICE_ACCOUNT_NAME: $(serviceAccountName)
-        REGION_NAME: $(regionName)
-        REGISTRY_NAME: $(registryName)
-        PROJECT_ID: $(projectId)
-        SOURCE_VERSION: $(Build.SourceVersion)
+          --region=$REGIONNAME \
+          --project=$PROJECTID
