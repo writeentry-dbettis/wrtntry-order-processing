@@ -84,7 +84,7 @@ stages:
       displayName: 'Build Project'
       inputs:
         command: 'build'
-        arguments: '--configuration $(buildConfig) --output $(Build.SourcesDirectory)/dist/$(imageTag) --runtime linux-x64 --no-self-contained'
+        arguments: '--configuration $(buildConfig) --output $(Build.SourcesDirectory)/dist/$(imageTag)/Serverless --runtime linux-x64 --no-self-contained'
         workingDirectory: '$(Build.SourcesDirectory)/src/Serverless/OrderProcessor'
 
     ## Copy Dockerfile to Pipeline Artifact
@@ -99,7 +99,7 @@ stages:
     - task: CopyFiles@2
       displayName: 'Copy Build Output to Artifacts'
       inputs:
-        sourceFolder: '$(Build.SourcesDirectory)/dist/$(imageTag)/Serverless/OrderProcessor'
+        sourceFolder: '$(Build.SourcesDirectory)/dist/$(imageTag)/Serverless'
         contents: '**'
         targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)/app'
 
