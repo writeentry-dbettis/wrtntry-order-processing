@@ -179,7 +179,7 @@ stages:
     - checkout: none
     - script: |
         set
-        gcloud auth activate-service-account --quiet --key-file <(echo $DEPLOYACCOUNTKEY | base64 -d)
+        gcloud auth activate-service-account --quiet --key-file <(echo $DEPLOY_ACCOUNT_KEY | base64 -d)
         gcloud run deploy batch-processing-api-$ENVIRONMENTSUFFIX \
           --quiet \
           --service-account=$SERVICEACCOUNTNAME \
@@ -188,3 +188,5 @@ stages:
           --platform=managed \
           --region=$REGIONNAME \
           --project=$PROJECTID
+      env: 
+        DEPLOY_ACCOUNT_KEY: $(deployAccountKey)
