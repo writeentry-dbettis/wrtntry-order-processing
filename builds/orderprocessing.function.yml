@@ -159,6 +159,7 @@ stages:
   - job: notifyApprovers
     timeoutInMinutes: 1440
     pool: server
+    dependsOn: buildAndPush
     steps:
     - task: ManualValidation@1
       displayName: 'Wait for Approval'
