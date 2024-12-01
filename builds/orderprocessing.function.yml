@@ -1,0 +1,188 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - release/*
+    - development
+  paths:
+    include:
+    - src/BatchProcessing.Common
+
+pr:
+  branches:
+    include:
+    - '*'
+    exclude:
+    - master
+    - release/*
+  paths:
+    include:
+    - src/BatchProcessing.Common
+  
+variables:
+  currentDate: $[ format('{0:yyyyMMdd}', Pipeline.StartTime) ]
+  buildPlatform: 'AnyCPU'
+  cloudRunRegion: 'us-east1'
+  cloudRunProjectId: 'whim-1690509463628'
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    buildConfig: Release
+    imageTag: latest
+    requiresRevisionApproval: true
+    environmentSuffix: 'prod'
+  ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/release') }}:
+    buildConfig: Release
+    imageTag: demo
+    requiresRevisionApproval: true
+    environmentSuffix: 'test'
+  ${{ elseif startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix') }}:
+    buildConfig: Release
+    imageTag: test
+    requiresRevisionApproval: true
+    environmentSuffix: 'test'
+  ${{ else }}:
+    buildConfig: Debug
+    imageTag: dev
+    requiresRevisionApproval: false
+    environmentSuffix: 'dev'
+
+stages:
+- stage: build
+  displayName: 'Build Source'
+  pool:
+    vmImage: ubuntu-latest
+  jobs:
+  - job: buildFunction
+    displayName: 'Build Order Processing & Dependencies'
+    steps:
+    - task: NuGetToolInstaller@1
+      displayName: 'Install NuGet Installer'
+
+    - script: |
+        echo $(Build.SourceBranch) :: $(buildConfig)/$(imageTag)
+        mkdir -p $(Build.ArtifactStagingDirectory)/dist/$(imageTag)
+        echo $(Build.SourceVersion) > $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
+        cat $(Build.ArtifactStagingDirectory)/dist/$(imageTag)/version.txt
+      displayName: 'Create Source Version File'
+
+    ## Install .NET 8.x
+    - task: UseDotNet@2
+      displayName: 'Install .NET Core SDK'
+      inputs:
+        version: 8.x
+
+    ## Restore packages
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore Packages'
+      inputs:
+        command: 'restore'
+        projects: '$(Build.SourcesDirectory)/src/signalr.sln'
+        feedsToUse: 'select'
+
+    ## Publish API project
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Project'
+      inputs:
+        command: 'build'
+        arguments: '--configuration $(buildConfig) --output $(Build.SourcesDirectory)/dist/$(imageTag) --runtime linux-x64 --no-self-contained'
+        workingDirectory: '$(Build.SourcesDirectory)/src/Serverless/OrderProcessor'
+
+    ## Copy Dockerfile to Pipeline Artifact
+    - task: CopyFiles@2
+      displayName: 'Copy Dockerfile to Artifacts'
+      inputs:
+        sourceFolder: '$(Build.SourcesDirectory)/src/Serverless/OrderProcessor'
+        contents: Dockerfile.deploy
+        targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
+    
+    ## Copy Build Output to Pipeline Artifact
+    - task: CopyFiles@2
+      displayName: 'Copy Build Output to Artifacts'
+      inputs:
+        sourceFolder: '$(Build.SourcesDirectory)/dist/$(imageTag)/Serverless/OrderProcessor'
+        contents: '**'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)/app'
+
+    ## Publish build artifacts to Azure DevOps
+    - task: PublishPipelineArtifact@1
+      displayName: 'Save Package Artifact'
+      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: 'drop'
+        publishLocation: 'pipeline'
+
+- stage: test
+  displayName: 'Automated Tests'
+  pool:
+    vmImage: ubuntu-latest
+  dependsOn: build
+  jobs:
+  - job: automatedTests
+    steps:
+    - checkout: none
+    - script: |
+        echo "Testing stage placeholder"
+      displayName: 'Run Unit/Integration Tests'
+
+- stage: approvedDeploy
+  displayName: 'Deploy Build Artifacts to Image Registry'
+  jobs:
+  - job: buildAndPush
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'current'
+        artifactName: 'drop'
+        targetPath: '$(System.ArtifactsDirectory)'
+      displayName: 'Download Pipeline Artifacts'
+
+    - task: Docker@2
+      displayName: 'Login to Container Registry'
+      inputs:
+        containerRegistry: $(containerRegistry)
+        command: login
+      
+    - task: Docker@2
+      displayName: 'Build & Push Docker Image for API'
+      inputs:
+        containerRegistry: '$(containerRegistry)'
+        repository: '$(registryName)'
+        command: 'buildAndPush'
+        Dockerfile: '$(System.ArtifactsDirectory)/dist/$(imageTag)/Dockerfile.deploy'
+        buildContext: '$(System.ArtifactsDirectory)/dist/$(imageTag)/app'
+        tags: |
+          $(Build.SourceVersion)
+
+  - job: notifyApprovers
+    timeoutInMinutes: 1440
+    pool: server
+    steps:
+    - task: ManualValidation@1
+      displayName: 'Wait for Approval'
+      inputs:
+        notifyUsers: '$(notifyUsers)'
+        allowApproversToApproveTheirOwnRuns: true
+        instructions: 'Deploy Order Processor Revision to $(imageTag) Environment'
+
+  - job: deployContainerRevision
+    dependsOn: notifyApprovers
+    condition: or(succeeded('notifyApprovers'), not(variables['requiresRevisionApproval']))
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+    - script: |
+        gcloud auth activate-service-account --quiet --key-file <(echo $(serviceAccountKey) | base64 -d)
+        gcloud run deploy batch-processing-api-$(environmentSuffix) \
+          --quiet \
+          --service-account=$(serviceAccountName) \
+          --allow-unauthenticated \
+          --image=$(cloudRunRegion)-docker.pkg.dev/$(registryName):$(Build.SourceVersion) \
+          --platform=managed \
+          --region=$(cloudRunRegion) \
+          --project=$(cloudRunProjectId)
