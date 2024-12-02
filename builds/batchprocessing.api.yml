@@ -77,13 +77,6 @@ stages:
       inputs:
         version: '20.x'
 
-    ## Build wwwroot 
-    - script: |
-        npm ci
-        npm run release
-      displayName: 'Build Static Websites'
-      workingDirectory: '$(Build.SourcesDirectory)/src/BatchProcessingApi'
-
     ## Restore packages
     - task: DotNetCoreCLI@2
       displayName: 'Restore Packages'
