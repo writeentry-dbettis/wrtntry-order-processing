@@ -8,6 +8,7 @@ trigger:
   paths:
     include:
     - src/BatchProcessing.Common
+    - src/Serverless/OrderProcessor
 
 pr:
   branches:
@@ -19,6 +20,7 @@ pr:
   paths:
     include:
     - src/BatchProcessing.Common
+    - src/Serverless/OrderProcessor
   
 variables:
   currentDate: $[ format('{0:yyyyMMdd}', Pipeline.StartTime) ]
