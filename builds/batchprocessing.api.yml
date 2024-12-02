@@ -100,6 +100,12 @@ stages:
         zipAfterPublish: false
         workingDirectory: '$(Build.SourcesDirectory)/src/BatchProcessingApi'
 
+    ## Build Web UI Front-End project
+    - script: |
+        npm ci
+        npm run build -- "-c development"
+      workingDirectory: '$(Build.SourcesDirectory)/src/BatchProcessing.Web'
+
     ## Copy Dockerfile to Pipeline Artifact
     - task: CopyFiles@2
       displayName: 'Copy Dockerfile to Artifacts'
@@ -108,13 +114,21 @@ stages:
         contents: Dockerfile.deploy
         targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)'
     
-    ## Copy Build Output to Pipeline Artifact
+    ## Copy API Output to Pipeline Artifact
     - task: CopyFiles@2
-      displayName: 'Copy Build Output to Artifacts'
+      displayName: 'Copy API Output to Artifacts'
       inputs:
         sourceFolder: '$(Build.SourcesDirectory)/dist/$(imageTag)/BatchProcessingApi'
         contents: '**'
         targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)/app'
+
+    ## Copy UI Output to Pipeline Artifact
+    - task: CopyFiles@2
+      displayName: 'Copy UI Output to Artifacts'
+      inputs:
+        sourceFolder: '$(Build.SourcesDirectory)/src/BatchProcessing.Web/dist/batch-processing.web/browser'
+        contents: '**'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/dist/$(imageTag)/app/wwwroot'
 
     ## Publish build artifacts to Azure DevOps
     - task: PublishPipelineArtifact@1

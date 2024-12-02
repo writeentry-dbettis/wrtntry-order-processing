@@ -1,0 +1,29 @@
+<div class="left-side">
+    <form id="batchUploadForm" (ngSubmit)="onSubmit($event)">
+        <label id="lblFile" for="uploadFile">Upload File:</label>
+        <input id="uploadFile" type="file" name="batchDocument" accept="text/csv" required />
+        <button class="btn" type="submit">Upload</button>
+        <label id="lblBusy">{{ uploadStatus }}</label>
+    </form>
+</div>
+<div class="divider" role="separator" aria-label="Divider"></div>
+<table style="width: 800px">
+    <thead>
+        <th>Status</th>
+        <th>ID</th>
+        <th>PO</th>
+        <th>Total</th>
+        <th>Tax</th>
+        <th>Order Date</th>
+    </thead>
+    <tbody>
+        <tr *ngFor="let order of orders | keyvalue">
+            <td id="status-{{ order.value.id }}"></td>
+            <td>{{ order.value.id }}</td>
+            <td>{{ order.value.poNumber }}</td>
+            <td>{{ order.value.totalAmount | currency }}</td>
+            <td>{{ order.value.tax | currency }}</td>
+            <td>{{ order.value.createdTime | date:'MM/dd/yyyy hh:mm a' }}</td>
+        </tr>
+    </tbody>
+</table>

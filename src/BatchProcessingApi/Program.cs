@@ -40,6 +40,17 @@ public class Program
 
         app.UseStaticFiles();
 
+        app.UseCors(cors => {
+            cors.AllowAnyMethod();
+            cors.AllowAnyHeader();
+            cors.AllowCredentials();
+            
+            if (app.Environment.IsDevelopment())
+            {
+                cors.WithOrigins("http://localhost:4200");
+            }
+        });
+
         app.UseRouting();
 
         app.UseAuthorization();
