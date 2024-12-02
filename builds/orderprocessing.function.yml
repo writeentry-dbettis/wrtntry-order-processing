@@ -2,7 +2,7 @@ trigger:
   batch: true
   branches:
     include:
-    - master
+    - main
     - release/*
     - development
   paths:
@@ -14,7 +14,7 @@ pr:
     include:
     - '*'
     exclude:
-    - master
+    - main
     - release/*
   paths:
     include:
