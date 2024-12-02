@@ -1,1 +1,21 @@
 /* You can add global styles to this file, and also import other style files */
+
+.status-queued
+{
+    background: #777 content('Q') no-repeat 0 0;
+}
+
+.status-processing
+{
+    background: black content('P') no-repeat 0 0;
+}
+
+.status-completed
+{
+    background: #03f content('C') no-repeat 0 0;
+}
+
+.status-failed
+{
+    background: #f30 content('F') no-repeat 0 0;
+}

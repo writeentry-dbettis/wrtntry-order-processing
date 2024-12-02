@@ -32,7 +32,7 @@ export class HomeComponent implements OnInit {
       const statusElement = document.getElementById('status-' + id);
 
       if (statusElement !== null) {
-        statusElement.innerHTML = status;
+        statusElement.innerHTML = `<i class="status-${status.toLowerCase()}"></i>`;
       }      
     })
   }

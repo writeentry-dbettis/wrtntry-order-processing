@@ -9,6 +9,7 @@ trigger:
     include:
     - src/BatchProcessing.Common
     - src/BatchProcessingApi
+    - src/BatchProcessing.Web
 
 pr:
   branches:
@@ -21,6 +22,7 @@ pr:
     include:
     - src/BatchProcessing.Common
     - src/BatchProcessingApi
+    - src/BatchProcessing.Web
   
 variables:
   currentDate: $[ format('{0:yyyyMMdd}', Pipeline.StartTime) ]
@@ -100,6 +102,7 @@ stages:
         npm ci
         npm run build -- "-c development"
       workingDirectory: '$(Build.SourcesDirectory)/src/BatchProcessing.Web'
+      displayName: 'Build Web UI Front-End'
 
     ## Copy Dockerfile to Pipeline Artifact
     - task: CopyFiles@2
