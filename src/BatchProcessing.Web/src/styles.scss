@@ -1,21 +1,25 @@
 /* You can add global styles to this file, and also import other style files */
 
-.status-queued
+.status-queued::after
 {
-    background: #777 content('Q') no-repeat 0 0;
+    color: #777;
+    content: '+';
 }
 
-.status-processing
+.status-processing::after
 {
-    background: black content('P') no-repeat 0 0;
+    color: #3f3;
+    content: '\27F3';
 }
 
-.status-completed
+.status-completed::after
 {
-    background: #03f content('C') no-repeat 0 0;
+    color: #03f;
+    content: '\2713';
 }
 
-.status-failed
+.status-failed::after
 {
-    background: #f30 content('F') no-repeat 0 0;
+    color: #f30;
+    content: 'X';
 }
