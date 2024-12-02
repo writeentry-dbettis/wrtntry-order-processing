@@ -85,7 +85,9 @@ public partial class Function : ICloudEventFunction<MessagePublishedData>
             //  - if not found, create new entry
             //var orderFile = await _storageProvider.GetFileAsync(order?.Id);
 
-            await Task.Delay(100);
+            var random = new Random();
+            var delay = random.Next(500, 3000);
+            await Task.Delay(delay);
 
             // save file in cloud storage bucket
             //_storageProvider.UploadAsync(orderFile);
