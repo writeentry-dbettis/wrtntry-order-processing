@@ -25,6 +25,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    needs: [setup-env]
 
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +49,7 @@ jobs:
         run: |
           cd src/BatchProcessing.Web
           npm ci
-          npm run build
+          npm run build ${{ needs.setup-env.outputs.build-args }}
 
       - name: 'Copy Build Output'
         run: |
