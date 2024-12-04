@@ -1,0 +1,51 @@
+name: Build Batch Processing API
+
+on:
+  workflow_call:
+    inputs:
+      configuration:
+        required: true
+        type: string
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  batch-processing-api-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 'Set up .NET Core'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 'Package Web API'
+        run: dotnet package src/BatchProcessingApi -c ${{ inputs.configuration }} -o ${{ env.DOTNET_ROOT }}/dist/app
+
+      - name: 'Set up NodeJS'
+        uses: actions/setup-node@v2
+        with:
+          node-version: 20.x
+          cache: npm
+    
+      - name: 'Build Web UI'
+        run: |
+          cd src/BatchProcessing.Web
+          npm ci
+          npm run build -- "-c development"
+
+      - name: 'Copy Build Output'
+        run: |
+          mkdir -p artifact/app
+          cp -R ${{ env.DOTNET_ROOT }}/dist/app/** artifact/app 
+          cp -R src/BatchProcessing.Web/dist/batch-processing.web/browser/** artifact/app/wwwroot
+          cp src/BatchProcessingApi/Dockerfile.deploy artifact/Dockerfile
+
+      - name: 'Upload Build Artifacts'
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifact
+          name: batch-processing-api
