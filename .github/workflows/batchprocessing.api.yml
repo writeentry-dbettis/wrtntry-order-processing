@@ -5,21 +5,35 @@ on:
         branches: [main, release/*, development]
 
 jobs:
-    build:
-        name: Build Batch Processing API
-        uses: ./.github/workflows/_batchprocessing.api.ci.yml
-        with:
-            configuration: ${{ github.ref == 'refs/heads/development' && 'Debug' || 'Release' }}
-        secrets: inherit
+  # Setup variables for use by subsequent jobs
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      configuration: ${{ github.ref == 'refs/heads/main' && 'Release' || 'Debug' }}
+      webui-config: ${{ github.ref == 'refs/heads/main' && '' || 'development' }}
+      environment: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
 
-    prod-deploy:
-        name: Deploy to Production
-        needs: [build]
-        uses: ./.github/workflows/_batchprocessing.api.cd.yml
-        permissions:
-            id-token: write
-            contents: read
-        with:
-            environment: Production
-            ref: ${{ github.sha }}
-        secrets: inherit
+  build:
+    name: Build Batch Processing API
+    uses: ./.github/workflows/_batchprocessing.api.ci.yml
+    with:
+        configuration: ${{ jobs.setup-env.outputs.configuration }}
+        webui-configuration: ${{ jobs.setup-env.outputs.webui-configuration }}
+    secrets: inherit
+
+  prod-deploy:
+    name: Deploy to Production
+    needs: [build]
+    uses: ./.github/workflows/_batchprocessing.api.cd.yml
+    permissions:
+        id-token: write
+        contents: read
+    with:
+        environment: ${{ jobs.setup-env.outputs.environment }}
+        ref: ${{ github.sha }}
+    secrets: inherit

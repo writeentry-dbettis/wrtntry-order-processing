@@ -4,11 +4,25 @@ on:
       configuration:
         required: true
         type: string
+      webui-configuration:
+        required: true
+        type: string
 
 env:
   DOTNET_VERSION: '8.0.x'
 
 jobs:
+  # Setup variables for use by subsequent jobs
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      build-args: ${{ inputs.webui-configuration == '' && '' || '-- -c' + inputs.webui-configuration }}
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
+
   build:
     runs-on: ubuntu-latest
 
@@ -34,7 +48,7 @@ jobs:
         run: |
           cd src/BatchProcessing.Web
           npm ci
-          npm run build -- "-c development"
+          npm run build
 
       - name: 'Copy Build Output'
         run: |
