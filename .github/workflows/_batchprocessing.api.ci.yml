@@ -9,7 +9,7 @@ env:
   DOTNET_VERSION: '8.0.x'
 
 jobs:
-  batch-processing-api-build:
+  build:
     runs-on: ubuntu-latest
 
     steps:
