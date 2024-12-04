@@ -38,7 +38,7 @@ jobs:
 
       - name: 'Copy Build Output'
         run: |
-          mkdir -p artifact/app
+          mkdir -p artifact/app/wwwroot
           cp -R ${{ env.DOTNET_ROOT }}/dist/app/** artifact/app 
           cp -R src/BatchProcessing.Web/dist/batch-processing.web/browser/** artifact/app/wwwroot
           cp src/BatchProcessingApi/Dockerfile.deploy artifact/Dockerfile
