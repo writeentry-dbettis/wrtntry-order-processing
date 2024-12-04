@@ -17,7 +17,7 @@ jobs:
     name: Setup Environment Variables
     runs-on: ubuntu-latest
     outputs:
-      build-args: ${{ inputs.webui-configuration == '' && '' || '-- -c' + inputs.webui-configuration }}
+      build-args: ${{ inputs.webui-configuration == '' && '' || concat('-- -c ', inputs.webui-configuration) }}
     steps:
       - name: Empty Step
         run: |
