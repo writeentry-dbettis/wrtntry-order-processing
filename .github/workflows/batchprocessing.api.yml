@@ -1,0 +1,23 @@
+on:
+    push:
+        branches: [main, release/*, development]
+
+jobs:
+    build:
+        name: Build Batch Processing API
+        uses: ./.github/workflows/_batchprocessing.api.ci.yml
+        with:
+            configuration: ${{ github.ref == 'refs/heads/development' && 'Debug' || 'Release' }}
+        secrets: inherit
+
+    prod-deploy:
+        name: Deploy to Production
+        needs: [build]
+        uses: ./.github/workflows/_batchprocess.api.cd.yml
+        permissions:
+            id-token: write
+            contents: read
+        with:
+            environment: Production
+            ref: ${{ github.sha }}
+        secrets: inherit

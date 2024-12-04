@@ -1,0 +1,59 @@
+name: Deploy Batch Processing API
+
+on:
+  workflow_call:
+    inputs:
+      configuration:
+        required: true
+        type: string
+
+jobs:
+  batch-processing-api-build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Authenticate to GCP
+          id: auth
+          uses: 'google-github-actions/auth@v0'
+          with:
+            token_format: 'access_token'
+            workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
+            service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+
+        - name: Authenicate to Artifact Registry
+          id: ar-auth
+          uses: 'docker/login-action@v1'
+          with:
+            username: 'oauth2accesstoken'
+            password: '${{ steps.auth.outputs.access_token }}'
+            registry: '${{ vars.REGION }}-docker.pkg.dev'
+
+      - name: Package Web API
+        run: dotnet package src/BatchProcessingApi -c ${{ inputs.configuration }} -o ${{ env.DOTNET_ROOT }}/dist/app
+
+      - name: Build & Push Container
+        id: build-image
+        uses: 'docker/build-push-action@v3'
+        with:
+            context: ${{ vars.code_directory }}
+            push: true
+            tags: |
+                ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ vars.SERVICE_NAME }}:${{ inputs.ref }}
+
+      - name: Create Service Declaration
+        run: |-
+            export CONTAINER_IMAGE="${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ vars.SERVICE_NAME }}:${{ inputs.ref }}"
+            export SERVICE_NAME="${{ vars.SERVICE_NAME }}"
+            export PROJECT_ID="${{ vars.GCP_PROJECT_ID }}"
+            export REVISION_TAG="${{ inputs.ref }}"
+            export CLOUD_RUN_SA="${{ vars.CLOUD_RUN_SA }}"
+            export ENVIRONMENT="${{ inputs.environment }}"
+            envsubst < ./service-yaml/container.yaml > container-${{ inputs.environment }}.yaml
+            
+      - name: Deploy Image
+        id: deploy-image
+        uses: 'google-github-actions/deploy-cloudrun@v0'
+        with:
+            service: ${{ vars.SERVICE_NAME }}
+            region: ${{ vars.REGION }}
+            metadata: container-${{ inputs.environment }}.yaml
