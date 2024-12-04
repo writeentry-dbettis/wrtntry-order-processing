@@ -15,7 +15,7 @@ jobs:
     prod-deploy:
         name: Deploy to Production
         needs: [build]
-        uses: ./.github/workflows/_batchprocess.api.cd.yml
+        uses: ./.github/workflows/_batchprocessing.api.cd.yml
         permissions:
             id-token: write
             contents: read
