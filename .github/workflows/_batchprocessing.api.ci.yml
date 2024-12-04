@@ -28,6 +28,7 @@ jobs:
         with:
           node-version: 20.x
           cache: npm
+          cache-dependency-path: src/BatchProcessing.Web/package-lock.json
     
       - name: 'Build Web UI'
         run: |
