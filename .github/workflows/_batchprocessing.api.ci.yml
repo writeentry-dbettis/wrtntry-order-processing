@@ -1,5 +1,3 @@
-name: Build Batch Processing API
-
 on:
   workflow_call:
     inputs:

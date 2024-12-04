@@ -1,9 +1,10 @@
-name: Deploy Batch Processing API
-
 on:
   workflow_call:
     inputs:
-      configuration:
+      environment:
+        required: true
+        type: string
+      ref:
         required: true
         type: string
 
@@ -28,9 +29,6 @@ jobs:
             password: '${{ steps.auth.outputs.access_token }}'
             registry: '${{ vars.REGION }}-docker.pkg.dev'
 
-      - name: Package Web API
-        run: dotnet package src/BatchProcessingApi -c ${{ inputs.configuration }} -o ${{ env.DOTNET_ROOT }}/dist/app
-
       - name: Build & Push Container
         id: build-image
         uses: 'docker/build-push-action@v3'
@@ -49,7 +47,7 @@ jobs:
             export CLOUD_RUN_SA="${{ vars.CLOUD_RUN_SA }}"
             export ENVIRONMENT="${{ inputs.environment }}"
             envsubst < ./service-yaml/container.yaml > container-${{ inputs.environment }}.yaml
-            
+
       - name: Deploy Image
         id: deploy-image
         uses: 'google-github-actions/deploy-cloudrun@v0'

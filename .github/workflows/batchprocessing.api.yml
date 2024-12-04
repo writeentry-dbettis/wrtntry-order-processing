@@ -1,3 +1,5 @@
+name: Build & Deploy Batch Processing API
+
 on:
     push:
         branches: [main, release/*, development]
