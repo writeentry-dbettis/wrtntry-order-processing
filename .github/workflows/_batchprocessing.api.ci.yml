@@ -21,7 +21,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 'Package Web API'
-        run: dotnet package src/BatchProcessingApi -c ${{ inputs.configuration }} -o ${{ env.DOTNET_ROOT }}/dist/app
+        run: dotnet publish src/BatchProcessingApi -c ${{ inputs.configuration }} -o ${{ env.DOTNET_ROOT }}/dist/app
 
       - name: 'Set up NodeJS'
         uses: actions/setup-node@v2
