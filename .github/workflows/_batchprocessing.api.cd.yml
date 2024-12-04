@@ -9,7 +9,7 @@ on:
         type: string
 
 jobs:
-  batch-processing-api-build-and-push:
+  deploy-image:
     runs-on: ubuntu-latest
 
     steps:
