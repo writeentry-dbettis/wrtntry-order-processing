@@ -32,6 +32,9 @@ jobs:
     name: Deploy to Production
     needs: [setup-env, build]
     uses: ./.github/workflows/_batchprocessing.api.cd.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
         environment: ${{ needs.setup-env.outputs.environment }}
         ref: ${{ github.sha }}
