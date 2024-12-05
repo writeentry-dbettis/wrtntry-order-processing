@@ -14,9 +14,9 @@ Using the GCP console in the browser, run the following:
     --location="global" \
     --workload-identity-pool="github-wif-pool" \
     --issuer-uri="https://token.actions.githubusercontent.com/" \
-    --allowed-audiences="api://AzureADTokenExchange" \
+    --allowed-audiences="https://github.com/[GITHUB ACCOUNT or ORG]" \
     --attribute-mapping="attribute.actor=assertion.actor,google.subject=assertion.sub,attribute.repository=assertion.repository" \
-    --attribute-condition="assertion.repository_owner=='<GitHub account or Organization>'"
+    --attribute-condition="assertion.repository_owner=='[GITHUB ACCOUNT or ORG]'"
     ```
 1. Create the Service Account in the *Service Accounts* menu
 1. Map the new Service Account to the GitHub user (note: the SUBJECT is in the format repo:writeentry-dbettis/wrtntry-order-processing:environment:production)
