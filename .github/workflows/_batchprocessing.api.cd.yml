@@ -21,6 +21,7 @@ jobs:
       contents: read
 
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
 
     steps:
       - name: Download all artifacts from build job to CWD
