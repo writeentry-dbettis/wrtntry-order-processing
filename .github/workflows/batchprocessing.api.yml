@@ -25,16 +25,15 @@ jobs:
     with:
         configuration: ${{ needs.setup-env.outputs.configuration }}
         webui-configuration: ${{ needs.setup-env.outputs.webui-configuration }}
+        artifactName: batch-processing-api
     secrets: inherit
 
   prod-deploy:
     name: Deploy to Production
     needs: [setup-env, build]
     uses: ./.github/workflows/_batchprocessing.api.cd.yml
-    permissions:
-        id-token: write
-        contents: read
     with:
         environment: ${{ needs.setup-env.outputs.environment }}
         ref: ${{ github.sha }}
+        artifactName: batch-processing-api
     secrets: inherit

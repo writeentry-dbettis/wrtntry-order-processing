@@ -7,17 +7,32 @@ on:
       ref:
         required: true
         type: string
+      artifactName:
+        required: true
+        type: string
+      serviceName:
+        required: true
+        type: string
 
 jobs:
   deploy:
+    permissions:
+      id-token: write
+      contents: read
+
     runs-on: ubuntu-latest
 
     steps:
+    - name: Download all artifacts from build job to CWD
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifactName }}
+
     - name: Authenticate to GCP
       id: auth
-      uses: 'google-github-actions/auth@v0'
+      uses: 'google-github-actions/auth@v2'
       with:
-        token_format: 'access_token'
+        create_credentials_file: true
         workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
         service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
 
@@ -33,15 +48,16 @@ jobs:
       id: build-image
       uses: 'docker/build-push-action@v3'
       with:
-        context: ${{ vars.code_directory }}
+        context: app
+        file: Dockerfile
         push: true
         tags: |
-            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ vars.SERVICE_NAME }}:${{ inputs.ref }}
+            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
 
     - name: Create Service Declaration
       run: |-
-          export CONTAINER_IMAGE="${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ vars.SERVICE_NAME }}:${{ inputs.ref }}"
-          export SERVICE_NAME="${{ vars.SERVICE_NAME }}"
+          export CONTAINER_IMAGE="${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ vars.serviceName }}:${{ inputs.ref }}"
+          export SERVICE_NAME="${{ inputs.serviceName }}"
           export PROJECT_ID="${{ vars.GCP_PROJECT_ID }}"
           export REVISION_TAG="${{ inputs.ref }}"
           export CLOUD_RUN_SA="${{ vars.CLOUD_RUN_SA }}"

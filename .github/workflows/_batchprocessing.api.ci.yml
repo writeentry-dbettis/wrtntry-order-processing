@@ -7,6 +7,9 @@ on:
       webui-configuration:
         required: true
         type: string
+      artifactName:
+        required: true
+        type: string
 
 env:
   DOTNET_VERSION: '8.0.x'
@@ -62,4 +65,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: artifact
-          name: batch-processing-api
+          name: ${{ inputs.artifactName }}
