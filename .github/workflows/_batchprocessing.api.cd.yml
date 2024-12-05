@@ -23,39 +23,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Download all artifacts from build job to CWD
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ inputs.artifactName }}
+      - name: Download all artifacts from build job to CWD
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifactName }}
 
-    - name: Authenticate to GCP
-      id: auth
-      uses: 'google-github-actions/auth@v2'
-      with:
-        create_credentials_file: true
-        workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
-        service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+      - name: Authenticate to GCP
+        id: auth
+        uses: "google-github-actions/auth@v2"
+        with:
+          create_credentials_file: true
+          workload_identity_provider: "${{ secrets.WIF_PROVIDER }}"
+          service_account: "${{ secrets.WIF_SERVICE_ACCOUNT }}"
 
-    - name: Authenicate to Artifact Registry
-      id: ar-auth
-      uses: 'docker/login-action@v1'
-      with:
-        username: 'oauth2accesstoken'
-        password: '${{ steps.auth.outputs.access_token }}'
-        registry: '${{ vars.REGION }}-docker.pkg.dev'
+      - name: Authenicate to Artifact Registry
+        id: ar-auth
+        uses: "docker/login-action@v1"
+        with:
+          username: "oauth2accesstoken"
+          password: "${{ steps.auth.outputs.access_token }}"
+          registry: "${{ vars.REGION }}-docker.pkg.dev"
 
-    - name: Build & Push Container
-      id: build-image
-      uses: 'docker/build-push-action@v3'
-      with:
-        context: app
-        file: Dockerfile
-        push: true
-        tags: |
+      - name: Build & Push Container
+        id: build-image
+        uses: "docker/build-push-action@v3"
+        with:
+          context: app
+          file: Dockerfile
+          push: true
+          tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
 
-    - name: Create Service Declaration
-      run: |-
+      - name: Create Service Declaration
+        run: |-
           export CONTAINER_IMAGE="${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ vars.serviceName }}:${{ inputs.ref }}"
           export SERVICE_NAME="${{ inputs.serviceName }}"
           export PROJECT_ID="${{ vars.GCP_PROJECT_ID }}"
@@ -64,10 +64,10 @@ jobs:
           export ENVIRONMENT="${{ inputs.environment }}"
           envsubst < ./service-yaml/container.yaml > container-${{ inputs.environment }}.yaml
 
-    - name: Deploy Image
-      id: deploy-image
-      uses: 'google-github-actions/deploy-cloudrun@v0'
-      with:
-        service: ${{ vars.SERVICE_NAME }}
-        region: ${{ vars.REGION }}
-        metadata: container-${{ inputs.environment }}.yaml
+      - name: Deploy Image
+        id: deploy-image
+        uses: "google-github-actions/deploy-cloudrun@v0"
+        with:
+          service: ${{ vars.SERVICE_NAME }}
+          region: ${{ vars.REGION }}
+          metadata: container-${{ inputs.environment }}.yaml
