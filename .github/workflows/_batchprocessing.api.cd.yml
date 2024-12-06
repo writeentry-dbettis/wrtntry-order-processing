@@ -77,7 +77,7 @@ jobs:
         id: deploy-image
         uses: "google-github-actions/deploy-cloudrun@v2"
         with:
-          service: ${{ vars.SERVICE_NAME }}
+          service: ${{ inputs.serviceName }}
           region: ${{ vars.REGION }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
           # metadata: container-${{ inputs.environment }}.yaml
