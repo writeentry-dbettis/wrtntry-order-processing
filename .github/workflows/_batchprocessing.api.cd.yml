@@ -24,6 +24,11 @@ jobs:
     environment: ${{ inputs.environment }}
 
     steps:
+      # Repo checkout is unnecessary for CODE, but required for GCP Auth
+      #   DO NOT REMOVE THIS STEP
+      - name: Checkout Repo
+        uses: "actions/checkout@v4"
+
       - name: Download all artifacts from build job to CWD
         uses: actions/download-artifact@v4
         with:
