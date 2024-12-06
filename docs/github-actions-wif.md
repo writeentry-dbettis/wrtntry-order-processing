@@ -14,12 +14,11 @@ Using the GCP console in the browser, run the following:
     --location="global" \
     --workload-identity-pool="github-wif-pool" \
     --issuer-uri="https://token.actions.githubusercontent.com/" \
-    --allowed-audiences="https://github.com/[GITHUB ACCOUNT or ORG]" \
     --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
     --attribute-condition="assertion.repository_owner=='[GITHUB ACCOUNT or ORG]'"
     ```
 1. Create the Service Account in the *Service Accounts* menu
-1. Map the new Service Account to the GitHub user (note: the SUBJECT is in the format repo:writeentry-dbettis/wrtntry-order-processing:environment:production)
+1. Map the new Service Account to the GitHub user (**NOTE**: the [REPO] is in the format of [ORG]/[REPO_NAME])
 ```
 gcloud iam service-accounts add-iam-policy-binding "github-actions@$[PROJECT_ID].iam.gserviceaccount.com" \
     --project="${PROJECT_ID}" \
@@ -28,5 +27,5 @@ gcloud iam service-accounts add-iam-policy-binding "github-actions@$[PROJECT_ID]
 
 ```
 1. Add the secrets to the GitHub environment
-    1. WIF_PROVIDER: projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID
+    1. WIF_PROVIDER: projects/[PROJECT NUMBER]/locations/global/workloadIdentityPools/[POOL ID]/providers/[PROVIDER ID]
     1. WIF_SERVICE_ACCOUNT: service account email
