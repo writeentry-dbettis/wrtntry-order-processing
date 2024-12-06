@@ -44,11 +44,8 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          path: |
-            '**'
-            '!repo'
+          path: '**'
           name: creds
-          compression-level: 0
 
       - name: Authenicate to Artifact Registry
         id: ar-auth
