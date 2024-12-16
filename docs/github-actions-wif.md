@@ -26,7 +26,8 @@ gcloud iam service-accounts add-iam-policy-binding "github-actions@$[PROJECT_ID]
     --member="principalSet://iam.googleapis.com/projects/[PROJECT NUMBER]/locations/global/workloadIdentityPools/github-wif-pool/attribute.repository/[REPO]"
 
 ```
-1. Add the "Service Account Token Creator" role to the new principalSet created in previous step.
+1. Add the "Service Account User" role to the new principalSet created in previous step.
+1. Add project roles to the Service Account via the IAM menu -> Grant Access.
 1. Add the secrets to the GitHub environment
     1. WIF_PROVIDER: projects/[PROJECT NUMBER]/locations/global/workloadIdentityPools/[POOL ID]/providers/[PROVIDER ID]
     1. WIF_SERVICE_ACCOUNT: service account email

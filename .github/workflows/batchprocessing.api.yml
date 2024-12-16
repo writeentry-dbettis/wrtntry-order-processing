@@ -20,7 +20,8 @@ jobs:
     outputs:
       configuration: ${{ github.ref == 'refs/heads/main' && 'Release' || 'Debug' }}
       webui-config: ${{ github.ref == 'refs/heads/main' && '' || 'development' }}
-      environment: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
+      environment: ${{ github.ref == 'refs/heads/main' && '["Production", "Demo"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      artifactName: 'batch-processing-api'
     steps:
       - name: Empty Step
         run: |
@@ -29,23 +30,26 @@ jobs:
   build:
     name: Build Batch Processing API
     needs: [setup-env]
-    uses: ./.github/workflows/_batchprocessing.api.ci.yml
+    uses: ./.github/workflows/ci/_batchprocessing.api.ci.yml
     with:
       configuration: ${{ needs.setup-env.outputs.configuration }}
       webui-configuration: ${{ needs.setup-env.outputs.webui-config }}
-      artifactName: batch-processing-api
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
     secrets: inherit
 
   prod-deploy:
-    name: Deploy to Production
+    name: Deploy Batch Processing API
     needs: [setup-env, build]
-    uses: ./.github/workflows/_batchprocessing.api.cd.yml
+    uses: ./.github/workflows/_cloudrun.gcp.deploy.yml
     permissions:
       id-token: write
       contents: read
+    strategy:
+      matrix:
+        environment: ${{ fromJSON(needs.setup-env.outputs.environment )}}
     with:
-      environment: ${{ needs.setup-env.outputs.environment }}
+      environment: ${{ matrix.environment }}
       ref: ${{ github.sha }}
-      artifactName: batch-processing-api
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
       serviceName: batch-processing-api
     secrets: inherit
