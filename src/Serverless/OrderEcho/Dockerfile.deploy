@@ -1,9 +1,11 @@
-FROM us-east1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/python312
+FROM python:3.9-slim-buster
 
-ADD . .
+WORKDIR /app
 
-RUN pip install -r requirements.txt --user
+COPY requirements.txt .
 
-EXPOSE 8080
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT [“python”, “./main.py”] 
+COPY . .
+
+CMD ["python3", "main.py"]
