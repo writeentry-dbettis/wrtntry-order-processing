@@ -9,6 +9,10 @@ namespace BatchProcessingApi;
 
 public class Program
 {
+    /// <summary>
+    /// Main program entry point
+    /// </summary>
+    /// <param name="args"></param>
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
