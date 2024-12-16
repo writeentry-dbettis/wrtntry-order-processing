@@ -16,7 +16,6 @@ jobs:
     name: Setup Environment Variables
     runs-on: ubuntu-latest
     outputs:
-      configuration: ${{ github.ref == 'refs/heads/main' && 'Release' || startsWith(github.ref, 'refs/heads/release') && 'Release' || 'Debug' }}
       environment: ${{ github.ref == 'refs/heads/main' && '["Production", "Demo"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
       artifactName: 'order-echo-serverless'
     steps:
@@ -27,9 +26,8 @@ jobs:
   build:
     name: Build Order Echo Serverless Function
     needs: [setup-env]
-    uses: ./.github/workflows/ci/_orderecho.serverless.ci.yml
+    uses: ./.github/workflows/_orderecho.serverless.ci.yml
     with:
-      configuration: ${{ needs.setup-env.outputs.configuration }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
     secrets: inherit
 

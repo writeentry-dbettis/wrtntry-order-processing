@@ -28,7 +28,7 @@ jobs:
   build:
     name: Build Order Processor Serverless Function
     needs: [setup-env]
-    uses: ./.github/workflows/ci/_orderprocessor.serverless.ci.yml
+    uses: ./.github/workflows/_orderprocessor.serverless.ci.yml
     with:
       configuration: ${{ needs.setup-env.outputs.configuration }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
