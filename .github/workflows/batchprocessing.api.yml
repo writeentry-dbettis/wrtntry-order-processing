@@ -7,9 +7,9 @@ on:
       - 'release/**'
       - development
     paths:
-      - 'src/BatchProcessingApi'
-      - 'src/BatchProcessing.Web'
-      - 'src/BatchProcessing.Models'
+      - 'src/BatchProcessingApi/**'
+      - 'src/BatchProcessing.Web/**'
+      - 'src/BatchProcessing.Models/**'
   workflow_dispatch:
 
 jobs:

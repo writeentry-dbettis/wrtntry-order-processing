@@ -36,13 +36,6 @@ public partial class Function : ICloudEventFunction<MessagePublishedData>
         _logger = logger;
     }      
 
-    /// <summary>
-    /// Main function entry point
-    /// </summary>
-    /// <param name="cloudEvent"></param>
-    /// <param name="data"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     public async Task HandleAsync(CloudEvent cloudEvent, MessagePublishedData data, CancellationToken cancellationToken)
     {
         var apiClient = new HttpClient

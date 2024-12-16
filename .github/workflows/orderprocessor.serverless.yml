@@ -7,8 +7,8 @@ on:
       - 'release/**'
       - development
     paths:
-      - 'src/Serverless/OrderProcessor'
-      - 'src/BatchProcessing.Models'
+      - 'src/Serverless/OrderProcessor/**'
+      - 'src/BatchProcessing.Models/**'
   workflow_dispatch:
 
 jobs:
