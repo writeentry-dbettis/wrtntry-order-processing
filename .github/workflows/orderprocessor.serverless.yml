@@ -1,0 +1,52 @@
+name: Build & Deploy Order Processor Serverless Function
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - development
+    paths:
+      - 'src/Serverless/OrderProcessor'
+      - 'src/BatchProcessing.Models'
+  workflow_dispatch:
+
+jobs:
+  # Setup variables for use by subsequent jobs
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      configuration: ${{ github.ref == 'refs/heads/main' && 'Release' || startsWith(github.ref, 'refs/heads/release') && 'Release' || 'Debug' }}
+      environment: ${{ github.ref == 'refs/heads/main' && '["Production", "Demo"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      artifactName: 'order-processor-serverless'
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
+
+  build:
+    name: Build Order Processor Serverless Function
+    needs: [setup-env]
+    uses: ./.github/workflows/_orderprocessor.serverless.ci.yml
+    with:
+      configuration: ${{ needs.setup-env.outputs.configuration }}
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+    secrets: inherit
+
+  deploy:
+    name: Deploy Order Processor Serverless Function
+    needs: [setup-env, build]
+    uses: ./.github/workflows/_cloudrun.gcp.deploy.yml
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        environment: ${{ fromJSON(needs.setup-env.outputs.environment) }}
+    with:
+      environment: ${{ matrix.environment }}
+      ref: ${{ github.sha }}
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+      serviceName: order-processor
+    secrets: inherit
