@@ -1,0 +1,25 @@
+on:
+  workflow_call:
+    inputs:
+      artifactName:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Copy Build Output"
+        run: |
+          mkdir -p artifact/app
+          cp -R src/Serverless/OrderEcho/** artifact/app 
+          mv artifact/app/Dockerfile.deploy artifact/Dockerfile
+
+      - name: "Upload Build Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifact
+          name: ${{ inputs.artifactName }}

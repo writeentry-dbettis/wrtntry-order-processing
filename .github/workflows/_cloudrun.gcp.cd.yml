@@ -13,6 +13,10 @@ on:
       serviceName:
         required: true
         type: string
+      cloudRunEnvVars:
+        required: false
+        type: string
+        default: '[]'
 
 permissions:
   id-token: write
@@ -62,6 +66,7 @@ jobs:
           push: true
           tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
+            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:latest
 
       - name: Deploy Image
         id: deploy-image
@@ -72,3 +77,6 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           # metadata: container-${{ inputs.environment }}.yaml
           image: "${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}"
+          env_vars: |-
+            ${{ join(fromJSON(inputs.cloudRunEnvVars), '
+            ') }}

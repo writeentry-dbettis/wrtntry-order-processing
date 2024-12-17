@@ -7,8 +7,8 @@ on:
       - 'release/**'
       - development
     paths:
-      - 'src/Serverless/OrderProcessor'
-      - 'src/BatchProcessing.Models'
+      - 'src/Serverless/OrderProcessor/**'
+      - 'src/BatchProcessing.Models/**'
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
   deploy:
     name: Deploy Order Processor Serverless Function
     needs: [setup-env, build]
-    uses: ./.github/workflows/_cloudrun.gcp.deploy.yml
+    uses: ./.github/workflows/_cloudrun.gcp.cd.yml
     permissions:
       id-token: write
       contents: read
@@ -49,4 +49,5 @@ jobs:
       ref: ${{ github.sha }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
       serviceName: order-processor
+      cloudRunEnvVars: '["ASPNETCORE_ENVIRONMENT=${{ matrix.environment }}"]'
     secrets: inherit

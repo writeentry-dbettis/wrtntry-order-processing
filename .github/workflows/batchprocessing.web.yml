@@ -1,4 +1,4 @@
-name: Build & Deploy Batch Processing API
+name: Build & Deploy Batch Processing Web UI
 
 on:
   push:
@@ -7,8 +7,7 @@ on:
       - 'release/**'
       - development
     paths:
-      - 'src/BatchProcessingApi/**'
-      - 'src/BatchProcessing.Models/**'
+      - 'src/BatchProcessing.Web/**'
   workflow_dispatch:
 
 jobs:
@@ -17,26 +16,25 @@ jobs:
     name: Setup Environment Variables
     runs-on: ubuntu-latest
     outputs:
-      configuration: ${{ github.ref == 'refs/heads/main' && 'Release' || 'Debug' }}
       webui-config: ${{ github.ref == 'refs/heads/main' && '' || 'development' }}
       environment: ${{ github.ref == 'refs/heads/main' && '["Production", "Demo"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
-      artifactName: 'batch-processing-api'
+      artifactName: 'batch-processing-web'
     steps:
       - name: Empty Step
         run: |
           echo "null"
 
   build:
-    name: Build Batch Processing API
+    name: Build Batch Processing Web UI
     needs: [setup-env]
-    uses: ./.github/workflows/_batchprocessing.api.ci.yml
+    uses: ./.github/workflows/_batchprocessing.web.ci.yml
     with:
-      configuration: ${{ needs.setup-env.outputs.configuration }}
+      webui-configuration: ${{ needs.setup-env.outputs.webui-config }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
     secrets: inherit
 
   deploy:
-    name: Deploy Batch Processing API
+    name: Deploy Batch Processing Web UI
     needs: [setup-env, build]
     uses: ./.github/workflows/_cloudrun.gcp.cd.yml
     permissions:
@@ -49,6 +47,5 @@ jobs:
       environment: ${{ matrix.environment }}
       ref: ${{ github.sha }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
-      serviceName: batch-processing-api
-      cloudRunEnvVars: '["ASPNETCORE_ENVIRONMENT=${{ matrix.environment }}"]'
+      serviceName: batch-processing-web
     secrets: inherit
