@@ -1,5 +1,8 @@
 FROM python:3.9-slim-buster
 
+ARG ENTRY_POINT="function"
+ARG FUNCTION_TYPE="http"
+
 WORKDIR /app
 
 COPY requirements.txt .
@@ -10,4 +13,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["python3", "main.py"]
+ENTRYPOINT ["functions-framework", "--target", "$(ENTRY_POINT)", "--signature-type", "$(FUNCTION_TYPE)"]

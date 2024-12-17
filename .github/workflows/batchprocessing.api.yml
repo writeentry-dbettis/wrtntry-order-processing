@@ -40,7 +40,7 @@ jobs:
   prod-deploy:
     name: Deploy Batch Processing API
     needs: [setup-env, build]
-    uses: ./.github/workflows/_cloudrun.gcp.deploy.yml
+    uses: ./.github/workflows/_cloudrun.dotnet.gcp.deploy.yml
     permissions:
       id-token: write
       contents: read
