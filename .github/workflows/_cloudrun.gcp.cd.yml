@@ -66,8 +66,8 @@ jobs:
           push: true
           tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
-            latest
-            
+            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:latest
+
       - name: Deploy Image
         id: deploy-image
         uses: "google-github-actions/deploy-cloudrun@v2"
