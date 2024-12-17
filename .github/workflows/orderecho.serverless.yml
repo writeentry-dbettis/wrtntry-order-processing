@@ -34,7 +34,7 @@ jobs:
   deploy:
     name: Deploy Order Echo Serverless Function
     needs: [setup-env, build]
-    uses: ./.github/workflows/_cloudrun.gcp.deploy.yml
+    uses: ./.github/workflows/_cloudrun.python.gcp.deploy.yml
     permissions:
       id-token: write
       contents: read
@@ -46,4 +46,6 @@ jobs:
       ref: ${{ github.sha }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
       serviceName: order-echo
+      functionSignature: cloudevent
+      functionEntryPoint: subscribe
     secrets: inherit
