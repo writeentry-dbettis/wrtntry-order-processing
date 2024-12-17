@@ -1,4 +1,4 @@
 export const environment = {
     production: false,
-    apiBaseUrl: 'https://batch-processing-api-231508820682.us-east1.run.app'
+    apiBaseUrl: 'https://batch-processing-api-555794641073.us-east1.run.app/'
 };
