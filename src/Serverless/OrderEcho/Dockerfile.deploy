@@ -1,7 +1,7 @@
 FROM python:3.9-slim-buster
 
 ARG ENTRY_POINT="function"
-ARG FUNCTION_TYPE="http"
+ARG SIGNATURE_TYPE="http"
 
 WORKDIR /app
 
