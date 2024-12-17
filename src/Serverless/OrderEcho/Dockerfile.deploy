@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE 8080
 
-ENTRYPOINT ["functions-framework", "--target", "$ENTRY_POINT", "--signature-type", "$SIGNATURE_TYPE"]
+ENTRYPOINT ["functions-framework", "--target", "${ENTRY_POINT}", "--signature-type", "${SIGNATURE_TYPE}"]
