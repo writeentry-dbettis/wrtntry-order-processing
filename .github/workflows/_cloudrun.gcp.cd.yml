@@ -16,6 +16,7 @@ on:
       buildArgs:
         required: false
         type: string
+        default: '[]'
 
 permissions:
   id-token: write
@@ -63,7 +64,8 @@ jobs:
           context: app
           file: Dockerfile
           push: true
-          build-args: ${{ fromJSON(inputs.buildArgs) }}
+          build-args: |
+            ${{ join(fromJSON(inputs.buildArgs), '\n') }}
           tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
 
