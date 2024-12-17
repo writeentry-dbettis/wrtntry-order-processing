@@ -47,7 +47,8 @@ public class Program
             
             if (app.Environment.IsDevelopment())
             {
-                cors.WithOrigins("http://localhost:4200");
+                cors.WithOrigins("http://localhost:4200", 
+                    "https://batch-processing-web-555794641073.us-east1.run.app");
             }
         });
 
