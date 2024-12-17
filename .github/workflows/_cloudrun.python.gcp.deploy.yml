@@ -69,8 +69,8 @@ jobs:
         run: |
           docker run \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v $PWD:/app \
-            -w /app \
+            -v $PWD/app:/workspace \
+            -w /workspace \
             -e GOOGLE_FUNCTION_TARGET=${{ inputs.functionEntryPoint }} \
             -e GOOGLE_FUNCTION_SIGNATURE=${{ inputs.functionSignature }} \
             -e GOOGLE_PYTHON_VERSION=${{ env.PYTHON_VERSION }} \

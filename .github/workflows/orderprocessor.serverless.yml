@@ -37,7 +37,7 @@ jobs:
   deploy:
     name: Deploy Order Processor Serverless Function
     needs: [setup-env, build]
-    uses: ./.github/workflows/_cloudrun.dotnet.gcp.deploy.yml
+    uses: ./.github/workflows/_cloudrun.gcp.deploy.yml
     permissions:
       id-token: write
       contents: read
