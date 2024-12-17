@@ -1,0 +1,53 @@
+on:
+  workflow_call:
+    inputs:
+      webui-configuration:
+        required: true
+        type: string
+      artifactName:
+        required: true
+        type: string
+
+jobs:
+  # Setup variables for use by subsequent jobs
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      build-args: ${{ inputs.webui-configuration == '' && '' || format('-- -c {0}', inputs.webui-configuration) }}
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [setup-env]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Set up NodeJS"
+        uses: actions/setup-node@v2
+        with:
+          node-version: 20.x
+          cache: npm
+          cache-dependency-path: src/BatchProcessing.Web/package-lock.json
+
+      - name: "Build Web UI"
+        run: |
+          cd src/BatchProcessing.Web
+          npm ci
+          npm run build ${{ needs.setup-env.outputs.build-args }}
+
+      - name: "Copy Build Output"
+        run: |
+          mkdir -p artifact/app
+          cp -R src/BatchProcessing.Web/dist/batch-processing.web/browser/** artifact/app
+          cp src/BatchProcessing.Web/Dockerfile.deploy artifact/Dockerfile
+
+      - name: "Upload Build Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifact
+          name: ${{ inputs.artifactName }}
