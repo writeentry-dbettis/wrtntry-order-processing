@@ -65,7 +65,7 @@ jobs:
           file: Dockerfile
           push: true
           build-args: |
-            ${{ join(fromJSON(inputs.buildArgs), '\n') }}
+            ${{ fromJSON(inputs.buildArgs) }}
           tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
 

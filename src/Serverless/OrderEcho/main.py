@@ -3,6 +3,7 @@ import base64
 from cloudevents.http import CloudEvent
 import functions_framework
 
+
 # Triggered from a message on a Cloud Pub/Sub topic.
 @functions_framework.cloud_event
 def subscribe(cloud_event: CloudEvent) -> None:
