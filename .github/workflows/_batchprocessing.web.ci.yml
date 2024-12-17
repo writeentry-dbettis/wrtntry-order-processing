@@ -45,6 +45,7 @@ jobs:
           mkdir -p artifact/app
           cp -R src/BatchProcessing.Web/dist/batch-processing.web/browser/** artifact/app
           cp src/BatchProcessing.Web/Dockerfile.deploy artifact/Dockerfile
+          cp src/BatchProcessing.Web/default.conf artifact/app/default.conf
 
       - name: "Upload Build Artifacts"
         uses: actions/upload-artifact@v4

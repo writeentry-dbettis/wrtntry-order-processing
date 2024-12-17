@@ -1,7 +1,14 @@
 FROM nginx:alpine
 
-COPY . /usr/share/nginx/html
+WORKDIR /app
 
-EXPOSE 80
+COPY . .
+
+RUN chmod og+x /app
+
+# Overwrite the NGINX configuration with the config in the project
+RUN mv default.conf /etc/nginx/conf.d
+
+EXPOSE 8080
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
