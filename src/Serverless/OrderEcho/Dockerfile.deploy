@@ -1,8 +1,5 @@
 FROM python:3.9-slim-buster
 
-ARG ENTRY_POINT="function"
-ARG SIGNATURE_TYPE="http"
-
 WORKDIR /app
 
 COPY requirements.txt .
@@ -11,6 +8,9 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV ENTRY_POINT="function"
+ENV SIGNATURE_TYPE="http"
+
 EXPOSE 8080
 
-ENTRYPOINT ["functions-framework", "--target", "${ENTRY_POINT}", "--signature-type", "${SIGNATURE_TYPE}"]
+ENTRYPOINT functions-framework --target ${ENTRY_POINT} --signature-type ${SIGNATURE_TYPE}

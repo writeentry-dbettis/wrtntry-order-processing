@@ -46,5 +46,5 @@ jobs:
       ref: ${{ github.sha }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
       serviceName: order-echo
-      buildArgs: '["SIGNATURE_TYPE=cloudevent", "ENTRY_POINT=subscribe"]'
+      cloudRunEnvVars: '["SIGNATURE_TYPE=cloudevent", "ENTRY_POINT=subscribe"]'
     secrets: inherit

@@ -13,7 +13,7 @@ on:
       serviceName:
         required: true
         type: string
-      buildArgs:
+      cloudRunEnvVars:
         required: false
         type: string
         default: '[]'
@@ -64,9 +64,6 @@ jobs:
           context: app
           file: Dockerfile
           push: true
-          build-args: |-
-            ${{ join(fromJSON(inputs.buildArgs), '
-            ') }}
           tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
 
@@ -79,3 +76,6 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           # metadata: container-${{ inputs.environment }}.yaml
           image: "${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}"
+          env_vars: |-
+            ${{ join(fromJSON(inputs.cloudRunEnvVars), '
+            ') }}

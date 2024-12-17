@@ -52,4 +52,5 @@ jobs:
       ref: ${{ github.sha }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
       serviceName: batch-processing-api
+      cloudRunEnvVars: '["ASPNETCORE_ENVIRONMENT=${{ matrix.environment }}"]'
     secrets: inherit

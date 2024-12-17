@@ -49,4 +49,5 @@ jobs:
       ref: ${{ github.sha }}
       artifactName: ${{ needs.setup-env.outputs.artifactName }}
       serviceName: order-processor
+      cloudRunEnvVars: '["ASPNETCORE_ENVIRONMENT=${{ matrix.environment }}"]'
     secrets: inherit
