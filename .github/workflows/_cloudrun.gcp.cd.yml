@@ -26,6 +26,7 @@ jobs:
   setup-env:
     name: Setup Environment Variables
     runs-on: ubuntu-latest
+    environment: ${{ inputs. environment }}
     outputs:
       serviceName: ${{ vars.SERVICE_SUFFIX == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.SERVICE_SUFFIX) }}
       referenceTag: ${{ vars.SERVICE_SUFFIX == '' && 'latest' || vars.SERVICE_SUFFIX }}
@@ -35,6 +36,7 @@ jobs:
           echo "null"
 
   deploy:
+    name: Build, Push, & Deploy Image
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     needs: [setup-env]
