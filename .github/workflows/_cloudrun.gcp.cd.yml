@@ -23,18 +23,6 @@ permissions:
   contents: read
 
 jobs:
-  setup-env:
-    name: Setup Environment Variables
-    runs-on: ubuntu-latest
-    environment: ${{ inputs. environment }}
-    outputs:
-      serviceName: ${{ vars.SERVICE_SUFFIX == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.SERVICE_SUFFIX) }}
-      referenceTag: ${{ vars.SERVICE_SUFFIX == '' && 'latest' || vars.SERVICE_SUFFIX }}
-    steps:
-      - name: Empty Step
-        run: |
-          echo "null"
-
   deploy:
     name: Build, Push, & Deploy Image
     runs-on: ubuntu-latest
@@ -88,7 +76,7 @@ jobs:
         id: deploy-image
         uses: "google-github-actions/deploy-cloudrun@v2"
         with:
-          service: ${{ inputs.serviceName }}
+          service: ${{ env.serviceName }}
           region: ${{ vars.REGION }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
           # metadata: container-${{ inputs.environment }}.yaml
