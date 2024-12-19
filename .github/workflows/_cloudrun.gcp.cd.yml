@@ -82,6 +82,15 @@ jobs:
           tags: |
             ${{ env.imageName }}:${{ inputs.ref }}
 
+      - name: Pull Existing Container
+        id: pull-container
+        if: ${{ env.imageExists == 'true' }}
+        run: |
+          docker pull $IMAGE_NAME:$IMAGE_TAG
+        env:
+          IMAGE_NAME: ${{ env.imageName }}
+          IMAGE_TAG: ${{ inputs.ref }}
+
       - name: Deploy Image
         id: deploy-image
         uses: "google-github-actions/deploy-cloudrun@v2"
