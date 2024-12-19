@@ -30,6 +30,8 @@ jobs:
     env:
       serviceName: ${{ vars.SERVICE_SUFFIX == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.SERVICE_SUFFIX) }}
       referenceTag: ${{ vars.SERVICE_SUFFIX == '' && 'latest' || vars.SERVICE_SUFFIX }}
+      imageName: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}
+      imageExists: false
 
     steps:
       # Repo checkout is unnecessary for CODE, but required for GCP Auth
@@ -61,16 +63,24 @@ jobs:
         with:
           name: ${{ inputs.artifactName }}
 
+      - name: Check for Existing Image
+        id: image-exists
+        run: |
+          echo "imageExists=$(docker manifest inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1 && echo 'true' || echo 'false')" >> $GITHUB_ENV
+        env:
+          IMAGE_NAME: ${{ env.imageName }}
+          IMAGE_TAG: ${{ inputs.ref }}
+        
       - name: Build & Push Container
         id: build-image
         uses: "docker/build-push-action@v3"
+        if: ${{ env.imageExists != 'true' }}
         with:
           context: app
           file: Dockerfile
           push: true
           tags: |
-            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
-            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ env.referenceTag }}
+            ${{ env.imageName }}:${{ inputs.ref }}
 
       - name: Deploy Image
         id: deploy-image
@@ -80,7 +90,16 @@ jobs:
           region: ${{ vars.REGION }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
           # metadata: container-${{ inputs.environment }}.yaml
-          image: "${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}"
+          image: "${{ env.imageName }}:${{ inputs.ref }}"
           env_vars: |-
             ${{ join(fromJSON(inputs.cloudRunEnvVars), '
             ') }}
+
+      - name: Apply Image Tag Alias
+        id: alias-image
+        run: |
+            docker image tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:$ALIAS
+        env:
+          IMAGE_NAME: ${{ env.imageName }}
+          IMAGE_TAG: ${{ inputs.ref }}
+          ALIAS: ${{ env.referenceTag }}
