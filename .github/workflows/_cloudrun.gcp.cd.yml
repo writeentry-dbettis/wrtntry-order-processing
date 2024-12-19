@@ -31,7 +31,7 @@ jobs:
       serviceName: ${{ vars.SERVICE_SUFFIX == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.SERVICE_SUFFIX) }}
       referenceTag: ${{ vars.SERVICE_SUFFIX == '' && 'latest' || vars.SERVICE_SUFFIX }}
       imageName: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}
-      imageExists: false
+      imageExists: 'false'
 
     steps:
       # Repo checkout is unnecessary for CODE, but required for GCP Auth
@@ -67,6 +67,7 @@ jobs:
         id: image-exists
         run: |
           echo "imageExists=$(docker manifest inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1 && echo 'true' || echo 'false')" >> $GITHUB_ENV
+          echo $GITHUB_ENV
         env:
           IMAGE_NAME: ${{ env.imageName }}
           IMAGE_TAG: ${{ inputs.ref }}
@@ -98,7 +99,8 @@ jobs:
       - name: Apply Image Tag Alias
         id: alias-image
         run: |
-            docker image tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:$ALIAS
+            docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:$ALIAS
+            docker push $IMAGE_NAME:$ALIAS
         env:
           IMAGE_NAME: ${{ env.imageName }}
           IMAGE_TAG: ${{ inputs.ref }}
