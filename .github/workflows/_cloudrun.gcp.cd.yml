@@ -39,7 +39,9 @@ jobs:
     name: Build, Push, & Deploy Image
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    needs: [setup-env]
+    env:
+      serviceName: ${{ vars.SERVICE_SUFFIX == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.SERVICE_SUFFIX) }}
+      referenceTag: ${{ vars.SERVICE_SUFFIX == '' && 'latest' || vars.SERVICE_SUFFIX }}
 
     steps:
       # Repo checkout is unnecessary for CODE, but required for GCP Auth
@@ -80,13 +82,13 @@ jobs:
           push: true
           tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
-            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ needs.setup-env.outputs.referenceTag }}
+            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ env.referenceTag }}
 
       - name: Deploy Image
         id: deploy-image
         uses: "google-github-actions/deploy-cloudrun@v2"
         with:
-          service: ${{ needs.setup-env.outputs.serviceName }}
+          service: ${{ inputs.serviceName }}
           region: ${{ vars.REGION }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
           # metadata: container-${{ inputs.environment }}.yaml
