@@ -66,8 +66,8 @@ jobs:
       - name: Check for Existing Image
         id: image-exists
         run: |
-          echo "imageExists=$(docker manifest inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1 && echo 'true' || echo 'false')" >> $GITHUB_ENV
-          echo $GITHUB_ENV
+          docker manifest inspect $IMAGE_NAME:$IMAGE_TAG
+          echo 'imageExists=$(docker manifest inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1 && echo "true" || echo "false")' >> $GITHUB_ENV
         env:
           IMAGE_NAME: ${{ env.imageName }}
           IMAGE_TAG: ${{ inputs.ref }}

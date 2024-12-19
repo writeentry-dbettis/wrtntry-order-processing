@@ -39,6 +39,7 @@ jobs:
       id-token: write
       contents: read
     strategy:
+      max-parallel: 1
       matrix:
         environment: ${{ fromJSON(needs.setup-env.outputs.environment) }}
     with:
