@@ -23,9 +23,21 @@ permissions:
   contents: read
 
 jobs:
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      serviceName: ${{ vars.serviceSuffix == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.serviceSuffix) }}
+      referenceTag: ${{ vars.serviceSuffix == '' && 'latest' || vars.serviceSuffix }}
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
+
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    needs: [setup-env]
 
     steps:
       # Repo checkout is unnecessary for CODE, but required for GCP Auth
@@ -66,13 +78,13 @@ jobs:
           push: true
           tags: |
             ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ inputs.ref }}
-            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:latest
+            ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}:${{ needs.setup-env.outputs.referenceTag }}
 
       - name: Deploy Image
         id: deploy-image
         uses: "google-github-actions/deploy-cloudrun@v2"
         with:
-          service: ${{ inputs.serviceName }}
+          service: ${{ needs.setup-env.outputs.serviceName }}
           region: ${{ vars.REGION }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
           # metadata: container-${{ inputs.environment }}.yaml
