@@ -27,8 +27,8 @@ jobs:
     name: Setup Environment Variables
     runs-on: ubuntu-latest
     outputs:
-      serviceName: ${{ vars.serviceSuffix == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.serviceSuffix) }}
-      referenceTag: ${{ vars.serviceSuffix == '' && 'latest' || vars.serviceSuffix }}
+      serviceName: ${{ vars.SERVICE_SUFFIX == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.SERVICE_SUFFIX) }}
+      referenceTag: ${{ vars.SERVICE_SUFFIX == '' && 'latest' || vars.SERVICE_SUFFIX }}
     steps:
       - name: Empty Step
         run: |
