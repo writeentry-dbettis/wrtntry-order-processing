@@ -16,7 +16,7 @@ jobs:
     name: Setup Environment Variables
     runs-on: ubuntu-latest
     outputs:
-      environment: ${{ github.ref == 'refs/heads/main' && '["Production", "Demo"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      environment: ${{ github.ref == 'refs/heads/main' && '["Demo", "Production"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
       artifactName: 'order-echo-serverless'
     steps:
       - name: Empty Step

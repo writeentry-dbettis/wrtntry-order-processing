@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       webui-config: ${{ github.ref == 'refs/heads/main' && '' || 'development' }}
-      environment: ${{ github.ref == 'refs/heads/main' && '["Production", "Demo"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      environment: ${{ github.ref == 'refs/heads/main' && '["Demo", "Production"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
       artifactName: 'batch-processing-web'
     steps:
       - name: Empty Step

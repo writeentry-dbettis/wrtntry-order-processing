@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       configuration: ${{ github.ref == 'refs/heads/main' && 'Release' || startsWith(github.ref, 'refs/heads/release') && 'Release' || 'Debug' }}
-      environment: ${{ github.ref == 'refs/heads/main' && '["Production", "Demo"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      environment: ${{ github.ref == 'refs/heads/main' && '["Demo", "Production"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
       artifactName: 'order-processor-serverless'
     steps:
       - name: Empty Step
