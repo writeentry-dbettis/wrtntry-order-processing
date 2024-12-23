@@ -1,0 +1,52 @@
+name: Build & Deploy Angular Web UI
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - development
+    paths:
+      - '<<PROJECT PATH>>/**'
+  workflow_dispatch:
+
+jobs:
+  # Setup variables for use by subsequent jobs
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      webui-config: ${{ github.ref == 'refs/heads/main' && '' || 'development' }}
+      environment: ${{ github.ref == 'refs/heads/main' && '["Demo", "Production"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      artifactName: 'angular-web-ui'
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
+
+  build:
+    name: Build Angular Web UI
+    needs: [setup-env]
+    uses: ./.github/workflows/_angular.web.ci.yml
+    with:
+      webui-configuration: ${{ needs.setup-env.outputs.webui-config }}
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+    secrets: inherit
+
+  deploy:
+    name: Deploy Angular Web UI
+    needs: [setup-env, build]
+    uses: ./.github/workflows/_cloudrun.gcp.cd.yml
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      max-parallel: 1
+      matrix:
+        environment: ${{ fromJSON(needs.setup-env.outputs.environment )}}
+    with:
+      environment: ${{ matrix.environment }}
+      ref: ${{ github.sha }}
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+      serviceName: angular-web-ui
+    secrets: inherit

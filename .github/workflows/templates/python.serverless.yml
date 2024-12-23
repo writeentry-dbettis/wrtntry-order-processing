@@ -1,0 +1,51 @@
+name: Build & Deploy Python Serverless Function
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - development
+    paths:
+      - '<<PROJECT PATH>>/**'
+  workflow_dispatch:
+
+jobs:
+  # Setup variables for use by subsequent jobs
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ github.ref == 'refs/heads/main' && '["Demo", "Production"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      artifactName: 'python-serverless'
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
+
+  build:
+    name: Build Python Serverless Function
+    needs: [setup-env]
+    uses: ./.github/workflows/_python.serverless.ci.yml
+    with:
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+    secrets: inherit
+
+  deploy:
+    name: Deploy Python Serverless Function
+    needs: [setup-env, build]
+    uses: ./.github/workflows/_cloudrun.gcp.cd.yml
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      max-parallel: 1
+      matrix:
+        environment: ${{ fromJSON(needs.setup-env.outputs.environment) }}
+    with:
+      environment: ${{ matrix.environment }}
+      ref: ${{ github.sha }}
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+      serviceName: python-serverless
+      cloudRunEnvVars: '["SIGNATURE_TYPE=cloudevent", "ENTRY_POINT=subscribe"]'
+    secrets: inherit

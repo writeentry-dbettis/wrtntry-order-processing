@@ -1,0 +1,55 @@
+name: Build & Deploy .NET API
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - development
+    paths:
+      - '<<PROJECT PATH>>/**'
+      - '<<PROJECT DEPS>>/**'
+  workflow_dispatch:
+
+jobs:
+  # Setup variables for use by subsequent jobs
+  setup-env:
+    name: Setup Environment Variables
+    runs-on: ubuntu-latest
+    outputs:
+      configuration: ${{ github.ref == 'refs/heads/main' && 'Release' || 'Debug' }}
+      webui-config: ${{ github.ref == 'refs/heads/main' && '' || 'development' }}
+      environment: ${{ github.ref == 'refs/heads/main' && '["Demo", "Production"]' || startsWith(github.ref, 'refs/heads/release') && '["Test"]' || '["Development"]' }}
+      artifactName: 'dotnet-api'
+    steps:
+      - name: Empty Step
+        run: |
+          echo "null"
+
+  build:
+    name: Build .NET API
+    needs: [setup-env]
+    uses: ./.github/workflows/_dotnet.api.ci.yml
+    with:
+      configuration: ${{ needs.setup-env.outputs.configuration }}
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+    secrets: inherit
+
+  deploy:
+    name: Deploy .NET API
+    needs: [setup-env, build]
+    uses: ./.github/workflows/_cloudrun.gcp.cd.yml
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      max-parallel: 1
+      matrix:
+        environment: ${{ fromJSON(needs.setup-env.outputs.environment )}}
+    with:
+      environment: ${{ matrix.environment }}
+      ref: ${{ github.sha }}
+      artifactName: ${{ needs.setup-env.outputs.artifactName }}
+      serviceName: dotnet-api
+      cloudRunEnvVars: '["ASPNETCORE_ENVIRONMENT=${{ matrix.environment }}"]'
+    secrets: inherit

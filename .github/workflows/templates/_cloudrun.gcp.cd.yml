@@ -1,0 +1,115 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      ref:
+        required: true
+        type: string
+      artifactName:
+        required: true
+        type: string
+      serviceName:
+        required: true
+        type: string
+      cloudRunEnvVars:
+        required: false
+        type: string
+        default: '[]'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Build, Push, & Deploy Image
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      serviceName: ${{ vars.SERVICE_SUFFIX == '' && inputs.serviceName || format('{0}-{1}', inputs.serviceName, vars.SERVICE_SUFFIX) }}
+      referenceTag: ${{ vars.SERVICE_SUFFIX == '' && 'latest' || vars.SERVICE_SUFFIX }}
+      imageName: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ inputs.serviceName }}
+      imageExists: 'false'
+
+    steps:
+      # Repo checkout is unnecessary for CODE, but required for GCP Auth
+      #   DO NOT REMOVE THIS STEP
+      - name: Checkout Repo
+        uses: "actions/checkout@v4"
+        with:
+          path: "repo"
+
+      - name: Authenticate to GCP
+        id: auth
+        uses: "google-github-actions/auth@v2"
+        with:
+          token_format: "access_token"
+          project_id: "${{ vars.GCP_PROJECT_ID }}"
+          workload_identity_provider: "${{ secrets.WIF_PROVIDER }}"
+          service_account: "${{ secrets.WIF_SERVICE_ACCOUNT }}"
+
+      - name: Authenicate to Artifact Registry
+        id: ar-auth
+        uses: "docker/login-action@v1"
+        with:
+          username: "oauth2accesstoken"
+          password: "${{ steps.auth.outputs.access_token }}"
+          registry: "${{ vars.REGION }}-docker.pkg.dev"
+
+      - name: Download all artifacts from build job to CWD
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifactName }}
+
+      - name: Check for Existing Image
+        id: image-exists
+        run: |
+          echo "imageExists=$(docker manifest inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1 && echo "true" || echo "false")" >> $GITHUB_ENV
+        env:
+          IMAGE_NAME: ${{ env.imageName }}
+          IMAGE_TAG: ${{ inputs.ref }}
+        
+      - name: Build & Push Container
+        id: build-image
+        uses: "docker/build-push-action@v3"
+        if: ${{ env.imageExists != 'true' }}
+        with:
+          context: app
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.imageName }}:${{ inputs.ref }}
+
+      - name: Pull Existing Container
+        id: pull-container
+        if: ${{ env.imageExists == 'true' }}
+        run: |
+          docker pull $IMAGE_NAME:$IMAGE_TAG
+        env:
+          IMAGE_NAME: ${{ env.imageName }}
+          IMAGE_TAG: ${{ inputs.ref }}
+
+      - name: Deploy Image
+        id: deploy-image
+        uses: "google-github-actions/deploy-cloudrun@v2"
+        with:
+          service: ${{ env.serviceName }}
+          region: ${{ vars.REGION }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          # metadata: container-${{ inputs.environment }}.yaml
+          image: "${{ env.imageName }}:${{ inputs.ref }}"
+          env_vars: |-
+            ${{ join(fromJSON(inputs.cloudRunEnvVars), '
+            ') }}
+
+      - name: Apply Image Tag Alias
+        id: alias-image
+        run: |
+            docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:$ALIAS
+            docker push $IMAGE_NAME:$ALIAS
+        env:
+          IMAGE_NAME: ${{ env.imageName }}
+          IMAGE_TAG: ${{ inputs.ref }}
+          ALIAS: ${{ env.referenceTag }}
